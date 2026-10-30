@@ -173,7 +173,6 @@
     </footer>
 
     <script>
-        const icalUrl = "https://ical.booking.com/v1/export?t=65701bce-5657-4e08-b1cb-8651905f9070";
         let calendar;
         let fechaEntrada = null;
         let fechaSalida = null;
@@ -212,14 +211,12 @@
                 });
             });
 
-            // 2. Cargar iCal de Booking mediante pasarela robusta
+            // 2. Cargar el archivo iCal local (sin CORS, 100% estable)
             try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
-                const respuesta = await fetch(proxyUrl);
-                const data = await respuesta.json();
-                
-                if (data.contents) {
-                    const lineas = data.contents.split(/\r\n|\n|\r/);
+                const respuesta = await fetch('./booking.ics?' + new Date().getTime());
+                if (respuesta.ok) {
+                    const textData = await respuesta.text();
+                    const lineas = textData.split(/\r\n|\n|\r/);
                     let inicioStr = "", finStr = "";
                     for (let i = 0; i < lineas.length; i++) {
                         if (lineas[i].startsWith("DTSTART")) inicioStr = lineas[i].split(":")[1];
@@ -247,7 +244,7 @@
                     }
                 }
             } catch (err) {
-                console.log("Aviso de sincronización iCal:", err);
+                console.log("Aviso leyendo iCal local:", err);
             }
 
             successCallback(eventos);
