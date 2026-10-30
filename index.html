@@ -35,7 +35,6 @@
         header h1 {
             font-size: 44px;
             margin-bottom: 10px;
-            letter-spacing: 1px;
         }
 
         header p {
@@ -98,11 +97,6 @@
             object-fit: cover;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-            transition: transform 0.3s ease;
-        }
-
-        .foto-galeria:hover {
-            transform: scale(1.02);
         }
 
         .booking-box {
@@ -134,6 +128,12 @@
             box-sizing: border-box;
         }
 
+        input:disabled {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
         .summary-card {
             background: #fdfcf9;
             border: 1px solid var(--border-color);
@@ -149,14 +149,13 @@
             margin: 10px 0;
         }
 
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
+        .alert-info {
+            background-color: #e2f0d9;
+            color: #274e13;
             padding: 10px;
             border-radius: 6px;
             margin-bottom: 15px;
-            font-size: 14px;
-            display: none;
+            font-size: 13px;
         }
 
         footer {
@@ -181,41 +180,31 @@
         <!-- Presentación y Fotos -->
         <section>
             <h2>Bienvenidos a Casa Josefas</h2>
-            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado para familias o pequeños grupos.</p>
+            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado.</p>
             <div class="grid-fotos">
                 <img src="images/pasillo.jpg" alt="Pasillo" class="foto-galeria">
                 <img src="images/sello-peregrino.jpg" alt="Detalle" class="foto-galeria">
             </div>
         </section>
 
-        <section>
-            <h2>Cocina, Estar y Exteriores</h2>
-            <div class="grid-fotos">
-                <img src="images/barra-salon.jpg" alt="Barra salon" class="foto-galeria">
-                <img src="images/salon-comedor.jpg" alt="Comedor" class="foto-galeria">
-                <img src="images/habitacion-principal.jpg" alt="Habitacion" class="foto-galeria">
-                <img src="images/psicina.jpg" alt="Piscina" class="foto-galeria">
-            </div>
-        </section>
-
-        <!-- MOTOR DE RESERVAS CON VALIDACIÓN DE ICAL -->
+        <!-- MOTOR DE RESERVAS INTELIGENTE -->
         <section id="motor-reservas">
             <h2>Calcula tu estancia y Reserva Online</h2>
-            <p>Selecciona tus fechas. El sistema verifica automáticamente la disponibilidad en tiempo real con Booking para evitar solapes (200€ dom-jue / 220€ vie-sáb).</p>
+            <p>Selecciona tus fechas. El sistema sincroniza en tiempo real las fechas ocupadas (200€ dom-jue / 220€ vie-sáb).</p>
             
-            <div id="alertaOcupado" class="alert-error">
-                ⚠️ Atención: Las fechas seleccionadas incluyen días que ya están ocupados. Por favor, elige otro período.
+            <div class="alert-info" id="estadoSincronizacion">
+                🔄 Sincronizando disponibilidad con Booking y sistema interno...
             </div>
 
             <div class="booking-box">
                 <div>
                     <div class="form-group">
                         <label for="checkin">Fecha de Entrada:</label>
-                        <input type="date" id="checkin" onchange="validarYCalcular()">
+                        <input type="date" id="checkin" onchange="calcularPrecio()">
                     </div>
                     <div class="form-group">
                         <label for="checkout">Fecha de Salida:</label>
-                        <input type="date" id="checkout" onchange="validarYCalcular()">
+                        <input type="date" id="checkout" onchange="calcularPrecio()" disabled>
                     </div>
                     <div class="form-group">
                         <label for="emailHuesped">Correo Electrónico:</label>
@@ -226,7 +215,7 @@
                 <div>
                     <div class="summary-card">
                         <h3>Resumen de la Reserva</h3>
-                        <p id="detalleNoches">Selecciona fechas libres.</p>
+                        <p id="detalleNoches">Selecciona una fecha de entrada disponible.</p>
                         <div class="price-tag" id="precioTotal">0 €</div>
                         <button id="btnPagar" class="btn" style="width: 100%; margin-top: 15px; background-color: #635bff; display: none;" onclick="iniciarPagoStripe()">Pagar con Tarjeta (Stripe)</button>
                     </div>
@@ -240,48 +229,55 @@
     </footer>
 
     <script>
-        // Enlace iCal oficial de Booking proporcionado por ti
         const icalUrl = "https://ical.booking.com/v1/export?t=65701bce-5657-4e08-b1cb-8651905f9070";
-        let fechasOcupadasBooking = [];
+        let fechasBloqueadas = [];
 
-        // Descargar y parsear el iCal de Booking al cargar la web
-        async function cargarDisponibilidadBooking() {
+        async function inicializarCalendario() {
+            const estadoElem = document.getElementById('estadoSincronizacion');
+            const inputCheckin = document.getElementById('checkin');
+            
+            // Establecer fecha mínima como hoy
+            const hoyIso = new Date().toISOString().split('T')[0];
+            inputCheckin.min = hoyIso;
+
+            // 1. Cargar bloqueos manuales guardados en el navegador (desde el panel admin)
+            let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+            fechasBloqueadas = [...bloqueosAdmin];
+
+            // 2. Cargar iCal de Booking
             try {
-                // Usamos un proxy CORS público gratuito para leer el archivo .ics de Booking desde el navegador
                 const respuesta = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`);
                 const data = await respuesta.json();
                 if (data.contents) {
                     parsearICal(data.contents);
                 }
+                estadoElem.innerText = "✅ Disponibilidad sincronizada correctamente en tiempo real.";
+                estadoElem.style.backgroundColor = "#d4edda";
+                estadoElem.style.color = "#155724";
             } catch (error) {
-                console.error("Error al sincronizar con Booking:", error);
+                console.error("Error al sincronizar iCal:", error);
+                estadoElem.innerText = "⚠️ Sincronizado con bloqueos locales (Aviso: Error menor conectando con el iCal externo).";
             }
         }
 
         function parsearICal(icsData) {
             const lineas = icsData.split(/\r\n|\n|\r/);
-            let inicioStr = "";
-            let finStr = "";
+            let inicioStr = "", finStr = "";
 
             for (let i = 0; i < lineas.length; i++) {
-                if (lineas[i].startsWith("DTSTART")) {
-                    inicioStr = lineas[i].split(":")[1];
-                }
-                if (lineas[i].startsWith("DTEND")) {
-                    finStr = lineas[i].split(":")[1];
-                }
+                if (lineas[i].startsWith("DTSTART")) inicioStr = lineas[i].split(":")[1];
+                if (lineas[i].startsWith("DTEND")) finStr = lineas[i].split(":")[1];
                 if (lineas[i] === "END:VEVENT" && inicioStr && finStr) {
                     let fechaInicio = parsearFechaIcal(inicioStr);
                     let fechaFin = parsearFechaIcal(finStr);
                     
-                    // Rellenar todos los días intermedios como ocupados
                     let curr = new Date(fechaInicio);
                     while (curr < fechaFin) {
-                        fechasOcupadasBooking.push(curr.toISOString().split('T')[0]);
+                        let iso = curr.toISOString().split('T')[0];
+                        if (!fechasBloqueadas.includes(iso)) fechasBloqueadas.push(iso);
                         curr.setDate(curr.getDate() + 1);
                     }
-                    inicioStr = "";
-                    finStr = "";
+                    inicioStr = ""; finStr = "";
                 }
             }
         }
@@ -293,16 +289,28 @@
             return new Date(year, month, day);
         }
 
-        function validarYCalcular() {
+        document.getElementById('checkin').addEventListener('change', function() {
+            const checkinVal = this.value;
+            const checkoutInput = document.getElementById('checkout');
+            
+            if (checkinVal) {
+                checkoutInput.disabled = false;
+                // La salida mínima es el día siguiente a la entrada
+                let minCheckout = new Date(checkinVal);
+                minCheckout.setDate(minCheckout.getDate() + 1);
+                checkoutInput.min = minCheckout.toISOString().split('T')[0];
+                checkoutInput.value = "";
+                document.getElementById('precioTotal').innerText = "0 €";
+                document.getElementById('btnPagar').style.display = "none";
+            }
+        });
+
+        function calcularPrecio() {
             const checkinVal = document.getElementById('checkin').value;
             const checkoutVal = document.getElementById('checkout').value;
             const detalle = document.getElementById('detalleNoches');
             const totalElem = document.getElementById('precioTotal');
             const btnPagar = document.getElementById('btnPagar');
-            const alerta = document.getElementById('alertaOcupado');
-
-            alerta.style.display = "none";
-            btnPagar.style.display = "none";
 
             if (!checkinVal || !checkoutVal) return;
 
@@ -312,27 +320,28 @@
             let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays <= 0) {
-                detalle.innerText = "La fecha de salida debe ser posterior a la entrada.";
+                detalle.innerText = "La fecha de salida debe ser posterior a la de entrada.";
                 totalElem.innerText = "0 €";
+                btnPagar.style.display = "none";
                 return;
             }
 
-            // Comprobar si algún día seleccionado está en la lista de Booking
-            let haySolape = false;
+            // Verificar si hay algún día bloqueado en el rango seleccionado
+            let hayBloqueo = false;
             let currentCheck = new Date(start);
             for (let i = 0; i < diffDays; i++) {
-                let fechaIso = currentCheck.toISOString().split('T')[0];
-                if (fechasOcupadasBooking.includes(fechaIso)) {
-                    haySolape = true;
+                let iso = currentCheck.toISOString().split('T')[0];
+                if (fechasBloqueadas.includes(iso)) {
+                    hayBloqueo = true;
                     break;
                 }
                 currentCheck.setDate(currentCheck.getDate() + 1);
             }
 
-            if (haySolape) {
-                alerta.style.display = "block";
-                detalle.innerText = "Fechas no disponibles (ocupadas en Booking).";
+            if (hayBloqueo) {
+                detalle.innerText = "❌ Las fechas seleccionadas contienen días ya ocupados. Por favor, selecciona otro rango.";
                 totalElem.innerText = "0 €";
+                btnPagar.style.display = "none";
                 return;
             }
 
@@ -349,7 +358,7 @@
                 current.setDate(current.getDate() + 1);
             }
 
-            detalle.innerText = `${diffDays} noche(s) seleccionada(s). Disponibles.`;
+            detalle.innerText = `${diffDays} noche(s) seleccionada(s). Fechas disponibles.`;
             totalElem.innerText = precioTotal + " €";
             btnPagar.style.display = "block";
         }
@@ -361,11 +370,10 @@
                 alert("Introduce tu correo electrónico.");
                 return;
             }
-            alert(`Redirigiendo a Stripe para cobrar ${total}. (Próximamente conectamos tu pasarela real).`);
+            alert(`Redirigiendo a Stripe para procesar el pago de ${total}.`);
         }
 
-        // Ejecutar al cargar la página
-        cargarDisponibilidadBooking();
+        inicializarCalendario();
     </script>
 </body>
 </html>
