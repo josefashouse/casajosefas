@@ -211,47 +211,60 @@
                 });
             });
 
-            // 2. Cargar el archivo iCal local (sin CORS, 100% estable)
+            // 2. Cargar y parsear el archivo booking.ics local
             try {
-                const respuesta = await fetch('./booking.ics?' + new Date().getTime());
+                const respuesta = await fetch('./booking.ics?t=' + new Date().getTime());
                 if (respuesta.ok) {
                     const textData = await respuesta.text();
                     const lineas = textData.split(/\r\n|\n|\r/);
                     let inicioStr = "", finStr = "";
+
                     for (let i = 0; i < lineas.length; i++) {
-                        if (lineas[i].startsWith("DTSTART")) inicioStr = lineas[i].split(":")[1];
-                        if (lineas[i].startsWith("DTEND")) finStr = lineas[i].split(":")[1];
-                        if (lineas[i] === "END:VEVENT" && inicioStr && finStr) {
+                        let linea = lineas[i];
+                        if (linea.startsWith("DTSTART")) {
+                            inicioStr = linea.split(":")[1];
+                        }
+                        if (linea.startsWith("DTEND")) {
+                            finStr = linea.split(":")[1];
+                        }
+                        if (linea === "END:VEVENT" && inicioStr && finStr) {
                             let fInicio = formatIcalDate(inicioStr);
                             let fFin = formatIcalDate(finStr);
                             
-                            let curr = new Date(fInicio);
-                            let endDate = new Date(fFin);
-                            while (curr < endDate) {
-                                let iso = curr.toISOString().split('T')[0];
-                                if (!diasOcupadosArray.includes(iso)) diasOcupadosArray.push(iso);
-                                curr.setDate(curr.getDate() + 1);
-                            }
+                            if (fInicio && fFin) {
+                                let curr = new Date(fInicio);
+                                let endDate = new Date(fFin);
+                                while (curr < endDate) {
+                                    let iso = curr.toISOString().split('T')[0];
+                                    if (!diasOcupadosArray.includes(iso)) {
+                                        diasOcupadosArray.push(iso);
+                                    }
+                                    curr.setDate(curr.getDate() + 1);
+                                }
 
-                            eventos.push({
-                                start: fInicio,
-                                end: fFin,
-                                display: 'background',
-                                backgroundColor: '#6c757d'
-                            });
-                            inicioStr = ""; finStr = "";
+                                eventos.push({
+                                    start: fInicio,
+                                    end: fFin,
+                                    display: 'background',
+                                    backgroundColor: '#6c757d'
+                                });
+                            }
+                            inicioStr = ""; 
+                            finStr = "";
                         }
                     }
                 }
             } catch (err) {
-                console.log("Aviso leyendo iCal local:", err);
+                console.log("Error leyendo iCal local:", err);
             }
 
             successCallback(eventos);
         }
 
         function formatIcalDate(str) {
+            if (!str) return null;
             let cleanStr = str.replace(/[^0-9]/g, '');
+            if (cleanStr.length < 8) return null;
             let year = cleanStr.substring(0, 4);
             let month = cleanStr.substring(4, 6);
             let day = cleanStr.substring(6, 8);
