@@ -81,7 +81,6 @@
             width: 100%; height: 240px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color);
         }
 
-        /* Estructura limpia del motor de reservas */
         .booking-grid {
             display: grid;
             grid-template-columns: 1.5fr 1fr;
@@ -110,10 +109,6 @@
         }
         .price-tag { font-size: 26px; font-weight: bold; color: var(--primary); margin: 15px 0; }
 
-        /* Estilo visual para días ocupados en gris */
-        .fc-day-past { background-color: #f9f9f9 !important; color: #ccc !important; }
-        .fc-event-ocupado { background-color: #6c757d !important; border: none !important; opacity: 0.6; }
-
         footer {
             text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border-color); background: #fff;
         }
@@ -138,18 +133,16 @@
             </div>
         </section>
 
-        <!-- MOTOR DE RESERVAS AMPLIADO -->
+        <!-- MOTOR DE RESERVAS POR CLICS -->
         <section id="motor-reservas">
             <h2>Disponibilidad y Reserva Online</h2>
-            <p>Selecciona primero tu <strong>fecha de entrada</strong> y después tu <strong>fecha de salida</strong> haciendo clic en el calendario. Los días grises están ocupados.</p>
+            <p>Haz clic primero en el día de <strong>entrada</strong> y después en el día de <strong>salida</strong>. Los días en gris están ocupados y no se pueden seleccionar.</p>
             
             <div class="booking-grid">
-                <!-- Calendario Ancho -->
                 <div>
                     <div id="calendar"></div>
                 </div>
 
-                <!-- Resumen y Pago -->
                 <div>
                     <div class="summary-card">
                         <h3>Resumen de la Estancia</h3>
@@ -182,8 +175,8 @@
     <script>
         const icalUrl = "https://ical.booking.com/v1/export?t=65701bce-5657-4e08-b1cb-8651905f9070";
         let calendar;
-        let fechaEntradaSeleccionada = null;
-        let fechaSalidaSeleccionada = null;
+        let fechaEntrada = null;
+        let fechaSalida = null;
         let diasOcupadosArray = [];
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -192,22 +185,9 @@
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
-                selectable: true,
-                selectConstraint: { start: new Date().toISOString().split('T')[0] },
-                selectAllow: function(selectInfo) {
-                    let start = new Date(selectInfo.startStr);
-                    let end = new Date(selectInfo.endStr);
-                    let curr = new Date(start);
-                    
-                    while (curr < end) {
-                        let iso = curr.toISOString().split('T')[0];
-                        if (diasOcupadosArray.includes(iso)) return false;
-                        curr.setDate(curr.getDate() + 1);
-                    }
-                    return true;
-                },
-                select: function(info) {
-                    manejarSeleccionRango(info.startStr, info.endStr);
+                selectable: false, // Usaremos clics manuales para control absoluto
+                dateClick: function(info) {
+                    manejarClickFecha(info.dateStr);
                 },
                 events: function(fetchInfo, successCallback, failureCallback) {
                     cargarEventosCalendario(successCallback);
@@ -220,7 +200,7 @@
             let eventos = [];
             diasOcupadosArray = [];
 
-            // 1. Bloqueos manuales del admin
+            // 1. Bloqueos manuales del administrador
             let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
             bloqueosAdmin.forEach(fecha => {
                 diasOcupadosArray.push(fecha);
@@ -232,7 +212,7 @@
                 });
             });
 
-            // 2. iCal de Booking
+            // 2. Sincronización iCal de Booking
             try {
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
                 const respuesta = await fetch(proxyUrl);
@@ -260,7 +240,7 @@
                                 start: fInicio,
                                 end: fFin,
                                 display: 'background',
-                                backgroundColor: '#6c757d' // Días de Booking en gris
+                                backgroundColor: '#6c757d' // Días ocupados en gris
                             });
                             inicioStr = ""; finStr = "";
                         }
@@ -280,22 +260,61 @@
             return `${year}-${month}-${day}`;
         }
 
-        function manejarSeleccionRango(startStr, endStr) {
-            fechaEntradaSeleccionada = startStr;
-            let endDateObj = new Date(endStr);
-            endDateObj.setDate(endDateObj.getDate() - 1);
-            fechaSalidaSeleccionada = endDateObj.toISOString().split('T')[0];
-
-            // Validar que la salida sea estrictamente posterior a la entrada
-            if (fechaSalidaSeleccionada <= fechaEntradaSeleccionada) {
-                alert("La fecha de salida debe ser posterior a la de entrada.");
+        function manejarClickFecha(fechaStr) {
+            // Verificar si el día clicado está ocupado
+            if (diasOcupadosArray.includes(fechaStr)) {
+                alert("Este día ya está reservado y no se puede seleccionar.");
                 return;
             }
 
-            document.getElementById('checkin').value = fechaEntradaSeleccionada;
-            document.getElementById('checkout').value = fechaSalidaSeleccionada;
+            // Lógica de selección por turnos (1º clic: Entrada, 2º clic: Salida)
+            if (!fechaEntrada || (fechaEntrada && fechaSalida)) {
+                // Primer clic o reinicio
+                fechaEntrada = fechaStr;
+                fechaSalida = null;
+                document.getElementById('checkin').value = fechaEntrada;
+                document.getElementById('checkout').value = "";
+                document.getElementById('detalleNoches').innerText = "Ahora haz clic en la fecha de salida.";
+                document.getElementById('precioTotal').innerText = "0 €";
+                document.getElementById('btnPagar').style.display = "none";
+            } else if (fechaEntrada && !fechaSalida) {
+                // Segundo clic (Salida)
+                if (fechaStr <= fechaEntrada) {
+                    alert("La fecha de salida debe ser posterior a la de entrada. Se ha reiniciado la selección.");
+                    fechaEntrada = fechaStr;
+                    document.getElementById('checkin').value = fechaEntrada;
+                    return;
+                }
 
-            calcularPrecio(fechaEntradaSeleccionada, fechaSalidaSeleccionada);
+                // COMPROBACIÓN CRÍTICA: Verificar si hay días ocupados en el rango intermedio
+                let start = new Date(fechaEntrada);
+                let end = new Date(fechaStr);
+                let curr = new Date(start);
+                let hayBloqueoEnMedio = false;
+
+                while (curr < end) {
+                    let iso = curr.toISOString().split('T')[0];
+                    if (diasOcupadosArray.includes(iso)) {
+                        hayBloqueoEnMedio = true;
+                        break;
+                    }
+                    curr.setDate(curr.getDate() + 1);
+                }
+
+                if (hayBloqueoEnMedio) {
+                    alert("⚠️ No puedes seleccionar este rango porque hay días reservados en medio. Por favor, elige otras fechas.");
+                    fechaEntrada = fechaStr; // Reinicia la entrada al nuevo clic
+                    fechaSalida = null;
+                    document.getElementById('checkin').value = fechaEntrada;
+                    document.getElementById('checkout').value = "";
+                    document.getElementById('detalleNoches').innerText = "Selecciona de nuevo la fecha de salida.";
+                    return;
+                }
+
+                fechaSalida = fechaStr;
+                document.getElementById('checkout').value = fechaSalida;
+                calcularPrecio(fechaEntrada, fechaSalida);
+            }
         }
 
         function calcularPrecio(checkin, checkout) {
@@ -303,13 +322,6 @@
             let end = new Date(checkout);
             let diffTime = end - start;
             let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays <= 0) {
-                document.getElementById('detalleNoches').innerText = "Selecciona un rango válido.";
-                document.getElementById('precioTotal').innerText = "0 €";
-                document.getElementById('btnPagar').style.display = "none";
-                return;
-            }
 
             let precioTotal = 0;
             let current = new Date(start);
