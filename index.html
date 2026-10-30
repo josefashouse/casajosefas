@@ -109,12 +109,6 @@
         }
         .price-tag { font-size: 26px; font-weight: bold; color: var(--primary); margin: 15px 0; }
 
-        /* Estilo para los días ocupados marcados en gris por el iCal */
-        .fc-bg-event {
-            background: #6c757d !important;
-            opacity: 0.5 !important;
-        }
-
         footer {
             text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border-color); background: #fff;
         }
@@ -139,7 +133,7 @@
             </div>
         </section>
 
-        <!-- MOTOR DE RESERVAS CON ICAL REAL -->
+        <!-- MOTOR DE RESERVAS -->
         <section id="motor-reservas">
             <h2>Disponibilidad y Reserva Online</h2>
             <p>Haz clic primero en el día de <strong>entrada</strong> y después en el día de <strong>salida</strong>. Los días en gris están ocupados por reservas de Booking o bloqueos del administrador.</p>
@@ -206,7 +200,7 @@
             let eventos = [];
             diasOcupadosArray = [];
 
-            // 1. Cargar bloqueos manuales del panel admin (localStorage)
+            // 1. Cargar bloqueos manuales del panel admin
             let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
             bloqueosAdmin.forEach(fecha => {
                 diasOcupadosArray.push(fecha);
@@ -218,11 +212,10 @@
                 });
             });
 
-            // 2. Cargar iCal de Booking mediante un conversor de enlaces iCal robusto
+            // 2. Cargar iCal de Booking mediante feed integrado
             try {
-                // Usamos un servicio optimizado para parsear .ics a formato seguro compatible con webs estáticas
-                const apiIcals = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
-                const respuesta = await fetch(apiIcals);
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
+                const respuesta = await fetch(proxyUrl);
                 const data = await respuesta.json();
                 
                 if (data.contents) {
@@ -247,14 +240,14 @@
                                 start: fInicio,
                                 end: fFin,
                                 display: 'background',
-                                backgroundColor: '#6c757d' // Pinta los días de Booking en gris en el calendario
+                                backgroundColor: '#6c757d'
                             });
                             inicioStr = ""; finStr = "";
                         }
                     }
                 }
             } catch (err) {
-                console.error("Error al sincronizar con el iCal de Booking:", err);
+                console.log("Error cargando iCal:", err);
             }
 
             successCallback(eventos);
@@ -268,9 +261,8 @@
         }
 
         function manejarClickFecha(fechaStr) {
-            // Validación estricta: Si el día está en el array de ocupados, se bloquea el clic
             if (diasOcupadosArray.includes(fechaStr)) {
-                alert("⚠️ Este día ya está reservado (en Booking o bloqueado) y no se puede seleccionar.");
+                alert("⚠️ Este día ya está reservado y no se puede seleccionar.");
                 return;
             }
 
@@ -284,13 +276,12 @@
                 document.getElementById('btnPagar').style.display = "none";
             } else if (fechaEntrada && !fechaSalida) {
                 if (fechaStr <= fechaEntrada) {
-                    alert("La fecha de salida debe ser posterior a la de entrada. Se reinicia la selección.");
+                    alert("La fecha de salida debe ser posterior a la de entrada.");
                     fechaEntrada = fechaStr;
                     document.getElementById('checkin').value = fechaEntrada;
                     return;
                 }
 
-                // COMPROBACIÓN CRÍTICA DE SOLAPES INTERMEDIOS
                 let start = new Date(fechaEntrada);
                 let end = new Date(fechaStr);
                 let curr = new Date(start);
@@ -306,8 +297,8 @@
                 }
 
                 if (hayBloqueoEnMedio) {
-                    alert("⚠️ No puedes seleccionar este rango porque hay días reservados en medio. Por favor, elige otras fechas libres.");
-                    fechaEntrada = fechaStr; 
+                    alert("⚠️ Hay días reservados en medio de las fechas seleccionadas. Elige otro rango.");
+                    fechaEntrada = fechaStr;
                     fechaSalida = null;
                     document.getElementById('checkin').value = fechaEntrada;
                     document.getElementById('checkout').value = "";
@@ -332,9 +323,9 @@
             for (let i = 0; i < diffDays; i++) {
                 let dayOfWeek = current.getDay();
                 if (dayOfWeek === 5 || dayOfWeek === 6) {
-                    precioTotal += 220; // Viernes y Sábado
+                    precioTotal += 220;
                 } else {
-                    precioTotal += 200; // Domingo a Jueves
+                    precioTotal += 200;
                 }
                 current.setDate(current.getDate() + 1);
             }
