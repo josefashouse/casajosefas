@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
-    <!-- Librería para manejar fechas y calendarios iCal fácilmente -->
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <style>
         :root {
             --primary: #2d5a27;
@@ -107,7 +105,6 @@
             transform: scale(1.02);
         }
 
-        /* Estilos del Motor de Reservas */
         .booking-box {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -152,6 +149,16 @@
             margin: 10px 0;
         }
 
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
         footer {
             text-align: center;
             padding: 30px;
@@ -171,56 +178,47 @@
     </header>
 
     <div class="container">
-        <!-- Presentación -->
+        <!-- Presentación y Fotos -->
         <section>
             <h2>Bienvenidos a Casa Josefas</h2>
-            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado para familias o pequeños grupos. Cuidamos cada detalle para garantizar una estancia cómoda.</p>
-            
+            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado para familias o pequeños grupos.</p>
             <div class="grid-fotos">
-                <img src="images/pasillo.jpg" alt="Pasillo y recibidor" class="foto-galeria">
-                <img src="images/sello-peregrino.jpg" alt="Detalle de hospitalidad" class="foto-galeria">
+                <img src="images/pasillo.jpg" alt="Pasillo" class="foto-galeria">
+                <img src="images/sello-peregrino.jpg" alt="Detalle" class="foto-galeria">
             </div>
         </section>
 
-        <!-- Zona de Estar y Cocina -->
         <section>
-            <h2>Cocina y Espacio Social</h2>
-            <p>Cocina moderna y completamente equipada integrada con barra de salón y comedor con bancos acolchados[cite: 5, 54, 55].</p>
-            
+            <h2>Cocina, Estar y Exteriores</h2>
             <div class="grid-fotos">
-                <img src="images/barra-salon.jpg" alt="Barra del salón" class="foto-galeria">
-                <img src="images/salon-comedor.jpg" alt="Comedor interior" class="foto-galeria">
+                <img src="images/barra-salon.jpg" alt="Barra salon" class="foto-galeria">
+                <img src="images/salon-comedor.jpg" alt="Comedor" class="foto-galeria">
+                <img src="images/habitacion-principal.jpg" alt="Habitacion" class="foto-galeria">
+                <img src="images/psicina.jpg" alt="Piscina" class="foto-galeria">
             </div>
         </section>
 
-        <!-- Habitaciones y Exteriores -->
-        <section>
-            <h2>Habitaciones y Piscina</h2>
-            <p>Habitaciones luminosas con ropa de cama de calidad[cite: 16] y un magnífico jardín exterior con piscina[cite: 14, 48].</p>
-            
-            <div class="grid-fotos">
-                <img src="images/habitacion-principal.jpg" alt="Habitación principal" class="foto-galeria">
-                <img src="images/psicina.jpg" alt="Piscina exterior" class="foto-galeria">
-            </div>
-        </section>
-
-        <!-- MOTOR DE RESERVAS DIRECTAS -->
+        <!-- MOTOR DE RESERVAS CON VALIDACIÓN DE ICAL -->
         <section id="motor-reservas">
-            <h2>Calcula tu estancia y Reserva</h2>
-            <p>Selecciona tus fechas de entrada y salida. El sistema calcula automáticamente el precio (200€ de domingo a jueves / 220€ viernes y sábados) sincronizado con nuestro calendario de disponibilidad.</p>
+            <h2>Calcula tu estancia y Reserva Online</h2>
+            <p>Selecciona tus fechas. El sistema verifica automáticamente la disponibilidad en tiempo real con Booking para evitar solapes (200€ dom-jue / 220€ vie-sáb).</p>
             
+            <div id="alertaOcupado" class="alert-error">
+                ⚠️ Atención: Las fechas seleccionadas incluyen días que ya están ocupados. Por favor, elige otro período.
+            </div>
+
             <div class="booking-box">
                 <div>
                     <div class="form-group">
                         <label for="checkin">Fecha de Entrada:</label>
-                        <input type="date" id="checkin" onchange="calcularPrecio()">
+                        <input type="date" id="checkin" onchange="validarYCalcular()">
                     </div>
                     <div class="form-group">
                         <label for="checkout">Fecha de Salida:</label>
-                        <input type="date" id="checkout" onchange="calcularPrecio()">
+                        <input type="date" id="checkout" onchange="validarYCalcular()">
                     </div>
                     <div class="form-group">
-                        <label for="emailHuesped">Correo Electrónico (para recibir la confirmación):</label>
+                        <label for="emailHuesped">Correo Electrónico:</label>
                         <input type="email" id="emailHuesped" placeholder="tu@correo.com">
                     </div>
                 </div>
@@ -228,37 +226,83 @@
                 <div>
                     <div class="summary-card">
                         <h3>Resumen de la Reserva</h3>
-                        <p id="detalleNoches">Selecciona fechas para ver el desglose.</p>
+                        <p id="detalleNoches">Selecciona fechas libres.</p>
                         <div class="price-tag" id="precioTotal">0 €</div>
-                        <!-- Botón de pago simulado con Stripe (aquí conectarás tu enlace de pago de Stripe cuando lo crees) -->
                         <button id="btnPagar" class="btn" style="width: 100%; margin-top: 15px; background-color: #635bff; display: none;" onclick="iniciarPagoStripe()">Pagar con Tarjeta (Stripe)</button>
                     </div>
                 </div>
             </div>
         </section>
-
-        <!-- Formulario de Registro posterior -->
-        <section>
-            <h2>¿Ya has completado tu pago?</h2>
-            <p>Si ya has realizado tu reserva online, recuerda rellenar el formulario obligatorio de parte de viajeros:</p>
-            <a href="registro.html" class="btn" style="margin-top: 10px;">Acceder al Formulario de Registro</a>
-        </section>
     </div>
 
     <footer>
-        <p>&copy; 2026 Casa Josefas. Todos los derechos reservados. | Alquiler Vacacional</p>
+        <p>&copy; 2026 Casa Josefas. Todos los derechos reservados.</p>
     </footer>
 
     <script>
-        // Sincronización iCal de Booking (Enlace oficial de Casa Josefas)
-        const icalBookingUrl = "https://ical.booking.com/v1/export?t=65701bce-5657-4e08-b1cb-8651905f9070";
+        // Enlace iCal oficial de Booking proporcionado por ti
+        const icalUrl = "https://ical.booking.com/v1/export?t=65701bce-5657-4e08-b1cb-8651905f9070";
+        let fechasOcupadasBooking = [];
 
-        function calcularPrecio() {
+        // Descargar y parsear el iCal de Booking al cargar la web
+        async function cargarDisponibilidadBooking() {
+            try {
+                // Usamos un proxy CORS público gratuito para leer el archivo .ics de Booking desde el navegador
+                const respuesta = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`);
+                const data = await respuesta.json();
+                if (data.contents) {
+                    parsearICal(data.contents);
+                }
+            } catch (error) {
+                console.error("Error al sincronizar con Booking:", error);
+            }
+        }
+
+        function parsearICal(icsData) {
+            const lineas = icsData.split(/\r\n|\n|\r/);
+            let inicioStr = "";
+            let finStr = "";
+
+            for (let i = 0; i < lineas.length; i++) {
+                if (lineas[i].startsWith("DTSTART")) {
+                    inicioStr = lineas[i].split(":")[1];
+                }
+                if (lineas[i].startsWith("DTEND")) {
+                    finStr = lineas[i].split(":")[1];
+                }
+                if (lineas[i] === "END:VEVENT" && inicioStr && finStr) {
+                    let fechaInicio = parsearFechaIcal(inicioStr);
+                    let fechaFin = parsearFechaIcal(finStr);
+                    
+                    // Rellenar todos los días intermedios como ocupados
+                    let curr = new Date(fechaInicio);
+                    while (curr < fechaFin) {
+                        fechasOcupadasBooking.push(curr.toISOString().split('T')[0]);
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                    inicioStr = "";
+                    finStr = "";
+                }
+            }
+        }
+
+        function parsearFechaIcal(str) {
+            let year = parseInt(str.substring(0, 4));
+            let month = parseInt(str.substring(4, 6)) - 1;
+            let day = parseInt(str.substring(6, 8));
+            return new Date(year, month, day);
+        }
+
+        function validarYCalcular() {
             const checkinVal = document.getElementById('checkin').value;
             const checkoutVal = document.getElementById('checkout').value;
             const detalle = document.getElementById('detalleNoches');
             const totalElem = document.getElementById('precioTotal');
             const btnPagar = document.getElementById('btnPagar');
+            const alerta = document.getElementById('alertaOcupado');
+
+            alerta.style.display = "none";
+            btnPagar.style.display = "none";
 
             if (!checkinVal || !checkoutVal) return;
 
@@ -268,27 +312,44 @@
             let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays <= 0) {
-                detalle.innerText = "La fecha de salida debe ser posterior a la de entrada.";
+                detalle.innerText = "La fecha de salida debe ser posterior a la entrada.";
                 totalElem.innerText = "0 €";
-                btnPagar.style.display = "none";
                 return;
             }
 
+            // Comprobar si algún día seleccionado está en la lista de Booking
+            let haySolape = false;
+            let currentCheck = new Date(start);
+            for (let i = 0; i < diffDays; i++) {
+                let fechaIso = currentCheck.toISOString().split('T')[0];
+                if (fechasOcupadasBooking.includes(fechaIso)) {
+                    haySolape = true;
+                    break;
+                }
+                currentCheck.setDate(currentCheck.getDate() + 1);
+            }
+
+            if (haySolape) {
+                alerta.style.display = "block";
+                detalle.innerText = "Fechas no disponibles (ocupadas en Booking).";
+                totalElem.innerText = "0 €";
+                return;
+            }
+
+            // Calcular precio (200€ dom-jue, 220€ vie-sáb)
             let precioTotal = 0;
             let current = new Date(start);
-            let desgloseTexto = "";
-
             for (let i = 0; i < diffDays; i++) {
-                let dayOfWeek = current.getDay(); // 0 es Domingo, 5 es Viernes, 6 es Sábado
+                let dayOfWeek = current.getDay();
                 if (dayOfWeek === 5 || dayOfWeek === 6) {
-                    precioTotal += 220; // Viernes y Sábado
+                    precioTotal += 220;
                 } else {
-                    precioTotal += 200; // Domingo a Jueves
+                    precioTotal += 200;
                 }
                 current.setDate(current.getDate() + 1);
             }
 
-            detalle.innerText = `${diffDays} noche(s) seleccionada(s).`;
+            detalle.innerText = `${diffDays} noche(s) seleccionada(s). Disponibles.`;
             totalElem.innerText = precioTotal + " €";
             btnPagar.style.display = "block";
         }
@@ -296,15 +357,15 @@
         function iniciarPagoStripe() {
             const email = document.getElementById('emailHuesped').value;
             const total = document.getElementById('precioTotal').innerText;
-
             if (!email) {
-                alert("Por favor, introduce tu correo electrónico antes de continuar con el pago.");
+                alert("Introduce tu correo electrónico.");
                 return;
             }
-
-            // Aquí se conectará tu enlace de Stripe Checkout en el futuro
-            alert(`Redirigiendo a pasarela segura de Stripe para el cobro de ${total}. (Próximamente conectaremos tu cuenta de Stripe).`);
+            alert(`Redirigiendo a Stripe para cobrar ${total}. (Próximamente conectamos tu pasarela real).`);
         }
+
+        // Ejecutar al cargar la página
+        cargarDisponibilidadBooking();
     </script>
 </body>
 </html>
