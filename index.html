@@ -211,7 +211,7 @@
                 });
             });
 
-            // 2. Cargar y parsear el archivo booking.ics local
+            // 2. Cargar el archivo iCal local
             try {
                 const respuesta = await fetch('./booking.ics?t=' + new Date().getTime());
                 if (respuesta.ok) {
@@ -347,14 +347,30 @@
             document.getElementById('btnPagar').style.display = "block";
         }
 
+        function validarEmail(email) {
+            // Expresión regular estándar para verificar estructura de correo válida
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
         function iniciarPagoStripe() {
-            const email = document.getElementById('emailHuesped').value;
+            const emailInput = document.getElementById('emailHuesped').value.trim();
             const total = document.getElementById('precioTotal').innerText;
-            if (!email) {
-                alert("Por favor, introduce tu correo electrónico.");
+
+            // Validación estricta del correo antes de continuar
+            if (!emailInput) {
+                alert("⚠️ Por favor, introduce tu correo electrónico.");
+                document.getElementById('emailHuesped').focus();
                 return;
             }
-            alert(`Redirigiendo a Stripe para cobrar ${total}.`);
+
+            if (!validarEmail(emailInput)) {
+                alert("⚠️ El correo electrónico introducido no es válido. Comprueba que esté bien escrito (ej: tu@correo.com).");
+                document.getElementById('emailHuesped').focus();
+                return;
+            }
+
+            alert(`✅ Correo verificado (${emailInput}). Redirigiendo a Stripe para cobrar ${total}.`);
         }
     </script>
 </body>
