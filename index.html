@@ -382,7 +382,7 @@
                 return;
             }
 
-            // 1. Guardar bloqueo localmente para que el calendario se ponga en gris de inmediato
+            // 1. Guardar bloqueo localmente para que el calendario se ponga en gris
             let start = new Date(fechaEntrada);
             let end = new Date(fechaSalida);
             let curr = new Date(start);
@@ -409,10 +409,8 @@
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // 3. Redirigir al enlace de pago oficial de Stripe en modo test
+            // 3. Redirección directa al enlace de prueba de Stripe
             const enlaceStripeTest = "https://buy.stripe.com/test_5kQ8wPeqcept2lxI7l17N600";
-            
-            alert(`✅ Reserva registrada temporalmente y fechas bloqueadas.\n\nTe vamos a redirigir a la pasarela de prueba de Stripe para completar la simulación del pago.`);
             window.location.href = enlaceStripeTest;
         }
     </script>
