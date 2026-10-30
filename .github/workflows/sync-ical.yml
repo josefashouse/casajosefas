@@ -3,7 +3,10 @@ name: Sincronizar iCal de Booking
 on:
   schedule:
     - cron: '0 */3 * * *' # Se ejecuta automáticamente cada 3 horas
-  workflow_dispatch: # Permite forzar la actualización manual desde la pestaña Actions de GitHub
+  workflow_dispatch: # Permite forzar la ejecución manual
+
+permissions:
+  contents: write # Otorga permiso para escribir/actualizar archivos en el repositorio
 
 jobs:
   sync:
