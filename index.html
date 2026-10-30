@@ -409,9 +409,13 @@
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // 3. Redirección directa al enlace de prueba de Stripe
-            const enlaceStripeTest = "https://buy.stripe.com/test_5kQ8wPeqcept2lxI7l17N600";
-            window.location.href = enlaceStripeTest;
+            // 3. Redirigir a Stripe pasando el precio exacto calculado dinámicamente
+            // Nota: Stripe espera los importes en céntimos, por eso multiplicamos por 100.
+            const urlBaseStripe = "https://buy.stripe.com/test_5kQ8wPeqcepT2Ix17l7N600";
+            const precioEnCentimos = precioCalculadoTotal * 100;
+            const enlaceFinal = `${urlBaseStripe}?prefilled_email=${encodeURIComponent(emailInput)}&line_items[1][price_data][unit_amount]=${precioEnCentimos}`;
+
+            window.location.href = enlaceFinal;
         }
     </script>
 </body>
