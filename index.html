@@ -136,7 +136,7 @@
         <!-- MOTOR DE RESERVAS -->
         <section id="motor-reservas">
             <h2>Disponibilidad y Reserva Online</h2>
-            <p>Haz clic primero en el día de <strong>entrada</strong> y después en el día de <strong>salida</strong>. Los días en gris están ocupados por reservas de Booking o bloqueos del administrador.</p>
+            <p>Haz clic primero en el día de <strong>entrada</strong> y después en el día de <strong>salida</strong>. Los días en gris están ocupados.</p>
             
             <div class="booking-grid">
                 <div>
@@ -189,7 +189,7 @@
         let calendar;
         let fechaEntrada = null;
         let fechaSalida = null;
-        let diasOcupadosArray = [];
+        let nochesOcupadasSet = new Set(); // Guardará las noches exactas (desde entrada hasta la noche anterior a la salida)
         let precioCalculadoTotal = 0;
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -211,15 +211,17 @@
 
         async function cargarEventosCalendario(successCallback) {
             let eventos = [];
-            diasOcupadosArray = [];
+            nochesOcupadasSet.clear();
 
             // 1. Cargar bloqueos manuales y reservas web
             let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+            // Asumimos que los bloqueos admin se guardan por noches individuales o rangos. 
+            // Para mantener compatibilidad, si guardamos noches individuales:
             bloqueosAdmin.forEach(fecha => {
-                diasOcupadosArray.push(fecha);
+                nochesOcupadasSet.add(fecha);
                 eventos.push({
                     start: fecha,
-                    allDay: true,
+                    end: sumarDias(fecha, 1),
                     display: 'background',
                     backgroundColor: '#6c757d'
                 });
@@ -246,13 +248,14 @@
                             let fFin = formatIcalDate(finStr);
                             
                             if (fInicio && fFin) {
+                                // En iCal, DTEND es la fecha de salida (la mañana que se van). 
+                                // Las noches reales de ocupación van desde fInicio hasta la noche ANTERIOR a fFin.
                                 let curr = new Date(fInicio);
                                 let endDate = new Date(fFin);
+                                
                                 while (curr < endDate) {
                                     let iso = curr.toISOString().split('T')[0];
-                                    if (!diasOcupadosArray.includes(iso)) {
-                                        diasOcupadosArray.push(iso);
-                                    }
+                                    nochesOcupadasSet.add(iso);
                                     curr.setDate(curr.getDate() + 1);
                                 }
 
@@ -285,14 +288,24 @@
             return `${year}-${month}-${day}`;
         }
 
-        function manejarClickFecha(fechaStr) {
-            let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
-            if (diasOcupadosArray.includes(fechaStr) || bloqueosAdmin.includes(fechaStr)) {
-                alert("⚠️ Este día ya está reservado y no se puede seleccionar.");
-                return;
-            }
+        function sumarDias(fechaStr, dias) {
+            let d = new Date(fechaStr);
+            d.setDate(d.getDate() + dias);
+            return d.toISOString().split('T')[0];
+        }
 
+        function manejarClickFecha(fechaStr) {
+            // Una fecha está bloqueada para ENTRAR si la noche DE ESE DÍA YA ESTÁ OCUPADA.
+            // Pero si es una fecha de SALIDA de otra reserva, la noche anterior está ocupada, 
+            // pero el día de salida la noche de ese mismo día está libre para entrar.
+            
             if (!fechaEntrada || (fechaEntrada && fechaSalida)) {
+                // Seleccionando Entrada
+                // Comprobamos si la noche que empieza este día ya está reservada
+                if (nochesOcupadasSet.has(fechaStr)) {
+                    alert("⚠️ Esta noche ya está reservada y no se puede realizar el check-in.");
+                    return;
+                }
                 fechaEntrada = fechaStr;
                 fechaSalida = null;
                 document.getElementById('checkin').value = fechaEntrada;
@@ -301,6 +314,7 @@
                 document.getElementById('precioTotal').innerText = "0 €";
                 document.getElementById('btnPagar').style.display = "none";
             } else if (fechaEntrada && !fechaSalida) {
+                // Seleccionando Salida
                 if (fechaStr <= fechaEntrada) {
                     alert("La fecha de salida debe ser posterior a la de entrada.");
                     fechaEntrada = fechaStr;
@@ -308,21 +322,22 @@
                     return;
                 }
 
+                // Validar que ninguna noche intermedia esté ocupada
                 let start = new Date(fechaEntrada);
                 let end = new Date(fechaStr);
                 let curr = new Date(start);
-                let hayBloqueoEnMedio = false;
+                let hayConflicto = false;
 
                 while (curr < end) {
                     let iso = curr.toISOString().split('T')[0];
-                    if (diasOcupadosArray.includes(iso) || bloqueosAdmin.includes(iso)) {
-                        hayBloqueoEnMedio = true;
+                    if (nochesOcupadasSet.has(iso)) {
+                        hayConflicto = true;
                         break;
                     }
                     curr.setDate(curr.getDate() + 1);
                 }
 
-                if (hayBloqueoEnMedio) {
+                if (hayConflicto) {
                     alert("⚠️ Hay días reservados en medio de las fechas seleccionadas. Elige otro rango.");
                     fechaEntrada = fechaStr;
                     fechaSalida = null;
@@ -341,19 +356,19 @@
         function calcularPrecio(checkin, checkout) {
             let start = new Date(checkin);
             let end = new Date(checkout);
-            let diffTime = end - start;
-            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            precioCalculadoTotal = 0;
             let current = new Date(start);
-            for (let i = 0; i < diffDays; i++) {
-                let dayOfWeek = current.getDay();
+            precioCalculadoTotal = 0;
+            let diffDays = 0;
+
+            while (current < end) {
+                let dayOfWeek = current.getDay(); // 0: Dom, 5: Vie, 6: Sáb
                 if (dayOfWeek === 5 || dayOfWeek === 6) {
                     precioCalculadoTotal += 220; // Viernes y Sábado
                 } else {
                     precioCalculadoTotal += 200; // Domingo a Jueves
                 }
                 current.setDate(current.getDate() + 1);
+                diffDays++;
             }
 
             document.getElementById('detalleNoches').innerText = `${diffDays} noche(s) seleccionada(s).`;
@@ -370,19 +385,13 @@
             const emailInput = document.getElementById('emailHuesped').value.trim();
             const huespedes = document.getElementById('numHuespedes').value;
 
-            if (!emailInput) {
-                alert("⚠️ Por favor, introduce tu correo electrónico.");
+            if (!emailInput || !validarEmail(emailInput)) {
+                alert("⚠️ Por favor, introduce un correo electrónico válido.");
                 document.getElementById('emailHuesped').focus();
                 return;
             }
 
-            if (!validarEmail(emailInput)) {
-                alert("⚠️ El correo electrónico introducido no es válido. Comprueba que esté bien escrito.");
-                document.getElementById('emailHuesped').focus();
-                return;
-            }
-
-            // 1. Guardar bloqueo localmente para que el calendario se ponga en gris
+            // 1. Guardar bloqueo local de las noches
             let start = new Date(fechaEntrada);
             let end = new Date(fechaSalida);
             let curr = new Date(start);
@@ -397,7 +406,7 @@
             }
             localStorage.setItem('casaJosefasBloqueos', JSON.stringify(bloqueosAdmin));
 
-            // 2. Registrar la reserva en el historial del panel admin
+            // 2. Registrar reserva en admin
             let listaReservas = JSON.parse(localStorage.getItem('casaJosefasReservasWeb') || '[]');
             listaReservas.push({
                 email: emailInput,
@@ -409,8 +418,7 @@
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // 3. Redirigir a Stripe pasando el precio exacto calculado dinámicamente
-            // Nota: Stripe espera los importes en céntimos, por eso multiplicamos por 100.
+            // 3. Redirigir a Stripe pasando el precio exacto calculado (en céntimos)
             const urlBaseStripe = "https://buy.stripe.com/test_5kQ8wPeqcepT2Ix17l7N600";
             const precioEnCentimos = precioCalculadoTotal * 100;
             const enlaceFinal = `${urlBaseStripe}?prefilled_email=${encodeURIComponent(emailInput)}&line_items[1][price_data][unit_amount]=${precioEnCentimos}`;
