@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
-    <!-- FullCalendar CSS y JS para un calendario visual interactivo -->
+    <!-- FullCalendar CSS y JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <style>
         :root {
@@ -83,18 +83,16 @@
 
         .booking-box {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.2fr 0.8fr;
             gap: 30px;
         }
         @media (max-width: 768px) { .booking-box { grid-template-columns: 1fr; } }
 
-        /* Estilo del Calendario Visual */
         #calendar {
             background: #fff;
             padding: 15px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-            margin-bottom: 20px;
         }
 
         .form-group { margin-bottom: 15px; }
@@ -136,7 +134,7 @@
         <!-- MOTOR DE RESERVAS VISUAL -->
         <section id="motor-reservas">
             <h2>Disponibilidad y Reserva Online</h2>
-            <p>Consulta en el calendario los días libres (en blanco) y ocupados (en gris). Selecciona tu entrada y salida (200€ dom-jue / 220€ vie-sáb).</p>
+            <p>Selecciona en el calendario tus días de entrada y salida haciendo clic sobre ellos. Los días en gris están ocupados.</p>
             
             <div class="booking-box">
                 <!-- Columna Izquierda: Calendario Visual -->
@@ -161,7 +159,7 @@
                             <input type="email" id="emailHuesped" placeholder="tu@correo.com">
                         </div>
                         
-                        <p id="detalleNoches" style="font-size: 14px; color: #666;">Haz clic en el calendario para elegir fechas.</p>
+                        <p id="detalleNoches" style="font-size: 14px; color: #666;">Haz clic en una fecha de entrada y otra de salida.</p>
                         <div class="price-tag" id="precioTotal">0 €</div>
                         <button id="btnPagar" class="btn" style="width: 100%; background-color: #635bff; display: none;" onclick="iniciarPagoStripe()">Pagar con Tarjeta (Stripe)</button>
                     </div>
@@ -179,6 +177,7 @@
         let calendar;
         let fechaEntradaSeleccionada = null;
         let fechaSalidaSeleccionada = null;
+        let diasOcupadosArray = [];
 
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
@@ -187,7 +186,19 @@
                 initialView: 'dayGridMonth',
                 locale: 'es',
                 selectable: true,
-                selectConstraint: { start: new Date().toISOString().split('T')[0] },
+                selectAllow: function(selectInfo) {
+                    // Evitar seleccionar rangos que contengan días ocupados
+                    let start = new Date(selectInfo.startStr);
+                    let end = new Date(selectInfo.endStr);
+                    let curr = new Date(start);
+                    
+                    while (curr < end) {
+                        let iso = curr.toISOString().split('T')[0];
+                        if (diasOcupadosArray.includes(iso)) return false;
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                    return true;
+                },
                 select: function(info) {
                     manejarSeleccionFechas(info.startStr, info.endStr);
                 },
@@ -200,12 +211,14 @@
 
         async function cargarEventosCalendario(successCallback) {
             let eventos = [];
+            diasOcupadosArray = [];
 
             // 1. Cargar bloqueos manuales del panel admin
             let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
             bloqueosAdmin.forEach(fecha => {
+                diasOcupadosArray.push(fecha);
                 eventos.push({
-                    title: 'Ocupado',
+                    title: 'No disponible',
                     start: fecha,
                     allDay: true,
                     display: 'background',
@@ -213,10 +226,12 @@
                 });
             });
 
-            // 2. Cargar iCal de Booking mediante proxy público
+            // 2. Cargar iCal de Booking a través de un servicio de proxy confiable
             try {
-                const respuesta = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`);
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
+                const respuesta = await fetch(proxyUrl);
                 const data = await respuesta.json();
+                
                 if (data.contents) {
                     const lineas = data.contents.split(/\r\n|\n|\r/);
                     let inicioStr = "", finStr = "";
@@ -226,19 +241,29 @@
                         if (lineas[i] === "END:VEVENT" && inicioStr && finStr) {
                             let fInicio = formatIcalDate(inicioStr);
                             let fFin = formatIcalDate(finStr);
+                            
+                            // Rellenar días intermedios en el array de bloqueo
+                            let curr = new Date(fInicio);
+                            let endDate = new Date(fFin);
+                            while (curr < endDate) {
+                                let iso = curr.toISOString().split('T')[0];
+                                if (!diasOcupadosArray.includes(iso)) diasOcupadosArray.push(iso);
+                                curr.setDate(curr.getDate() + 1);
+                            }
+
                             eventos.push({
-                                title: 'Reservado (Booking)',
+                                title: 'Reservado',
                                 start: fInicio,
                                 end: fFin,
                                 display: 'background',
-                                backgroundColor: '#6c757d' // Días en gris tachados/ocupados
+                                backgroundColor: '#6c757d' // Color gris para ocupados por Booking
                             });
                             inicioStr = ""; finStr = "";
                         }
                     }
                 }
             } catch (err) {
-                console.log("Usando eventos locales por fallo de red iCal");
+                console.log("Error al cargar iCal externo:", err);
             }
 
             successCallback(eventos);
@@ -253,7 +278,6 @@
 
         function manejarSeleccionFechas(startStr, endStr) {
             fechaEntradaSeleccionada = startStr;
-            // FullCalendar devuelve el endStr exclusivo (día siguiente al checkout), lo ajustamos
             let endDateObj = new Date(endStr);
             endDateObj.setDate(endDateObj.getDate() - 1);
             fechaSalidaSeleccionada = endDateObj.toISOString().split('T')[0];
