@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casa Josefas | Alquiler Vacacional</title>
+    <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
     <style>
         :root {
             --primary: #2d5a27;
@@ -26,14 +26,14 @@
         }
 
         header {
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80') no-repeat center center/cover;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('images/jardin.jpg') no-repeat center center/cover;
             color: white;
             text-align: center;
-            padding: 100px 20px;
+            padding: 130px 20px;
         }
 
         header h1 {
-            font-size: 42px;
+            font-size: 44px;
             margin-bottom: 10px;
             letter-spacing: 1px;
         }
@@ -47,7 +47,7 @@
         .btn {
             background-color: var(--primary);
             color: white;
-            padding: 12px 25px;
+            padding: 14px 28px;
             border-radius: 6px;
             text-decoration: none;
             font-weight: 600;
@@ -60,7 +60,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 40px auto;
             padding: 0 20px;
         }
@@ -69,17 +69,37 @@
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 30px;
+            padding: 35px;
+            margin-bottom: 35px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.02);
         }
 
         section h2 {
             color: var(--primary);
             margin-top: 0;
-            font-size: 22px;
+            font-size: 24px;
             border-bottom: 2px solid var(--bg-color);
-            padding-bottom: 10px;
+            padding-bottom: 12px;
+        }
+
+        .grid-fotos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .foto-galeria {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease;
+        }
+
+        .foto-galeria:hover {
+            transform: scale(1.02);
         }
 
         footer {
@@ -90,38 +110,78 @@
             border-top: 1px solid var(--border-color);
             background: #fff;
         }
+
+        @media (max-width: 600px) {
+            header { padding: 80px 15px; }
+            header h1 { font-size: 32px; }
+            section { padding: 20px; }
+        }
     </style>
 </head>
 <body>
 
     <header>
         <h1>Casa Josefas</h1>
-        <p>Tu refugio de descanso y desconexión en un entorno único</p>
-        <a href="#contacto" class="btn">Consultar Disponibilidad</a>
+        <p>Tu refugio de tranquilidad, confort y naturaleza en O Porriño</p>
+        <a href="#registro" class="btn">Acceder al Registro de Viajeros</a>
     </header>
 
     <div class="container">
+        <!-- Presentación -->
         <section>
             <h2>Bienvenidos a Casa Josefas</h2>
-            <p>Disfruta de una experiencia inolvidable en un alojamiento pensado para el confort, la tranquilidad y el contacto con lo auténtico. Ideal para familias o pequeños grupos que buscan desconectar con todas las comodidades.</p>
+            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado para familias o pequeños grupos. Cuidamos cada detalle para garantizar una estancia cómoda, combinando estancias cálidas con acabados en madera y todas las comodidades actuales.</p>
+            
+            <div class="grid-fotos">
+                <img src="images/pasillo.jpg" alt="Pasillo y recibidor de Casa Josefas" class="foto-galeria">
+                <img src="images/sello-peregrino.jpg" alt="Detalle de hospitalidad y sello peregrino" class="foto-galeria">
+            </div>
         </section>
 
+        <!-- Zona de Estar y Cocina -->
         <section>
-            <h2>El Entorno y Ubicación</h2>
-            <p>Situada en un enclave privilegiado, Casa Josefas permite disfrutar de la naturaleza circundante, la gastronomía local y una excelente comunicación con los principales puntos de interés de la zona.</p>
+            <h2>Cocina y Espacio Social</h2>
+            <p>La casa dispone de una cocina moderna y completamente equipada integrada de manera fluida con una elegante barra de salón y una zona de comedor con bancos acolchados, ideal para compartir momentos únicos en buena compañía[cite: 5, 54, 55].</p>
+            
+            <div class="grid-fotos">
+                <img src="images/barra-salon.jpg" alt="Barra del salón y plantas" class="foto-galeria">
+                <img src="images/salon-comedor.jpg" alt="Comedor interior con bancos acolchados" class="foto-galeria">
+            </div>
         </section>
 
-        <section id="contacto">
-            <h2>Gestión de Estancia y Registro</h2>
-            <p>¿Ya tienes tu reserva confirmada con nosotros? Recuerda rellenar el formulario obligatorio de parte de viajeros antes de tu llegada para agilizar el proceso.</p>
-            <!-- Aquí puedes enlazar tu formulario de GitHub Pages anterior -->
-            <a href="registro.html" class="btn">Acceder al Formulario de Registro</a>
+        <!-- Habitaciones -->
+        <section>
+            <h2>Habitaciones y Descanso</h2>
+            <p>Disponemos de habitaciones amplias, luminosas y provistas de ropa de cama de alta calidad, armarios espaciosos y un ambiente sumamente acogedor para asegurar el mejor descanso[cite: 16].</p>
+            
+            <div class="grid-fotos">
+                <img src="images/habitacion-principal.jpg" alt="Habitación principal" class="foto-galeria">
+            </div>
+        </section>
+
+        <!-- Exteriores y Piscina -->
+        <section>
+            <h2>Exteriores, Jardín y Piscina</h2>
+            <p>Disfruta al aire libre de nuestro magnífico jardín privado y de la piscina rectangular totalmente equipada con zona de descanso[cite: 14, 48].</p>
+            
+            <div class="grid-fotos">
+                <img src="images/jardin.jpg" alt="Jardín exterior de la casa" class="foto-galeria">
+                <img src="images/psicina.jpg" alt="Piscina exterior" class="foto-galeria">
+            </div>
+        </section>
+
+        <!-- Sección de Registro -->
+        <section id="registro">
+            <h2>Gestión de Estancia y Registro de Viajeros</h2>
+            <p>Si ya cuentas con tu reserva confirmada con nosotros, por favor completa el formulario obligatorio de parte de viajeros antes de tu llegada para agilizar los trámites reglamentarios.</p>
+            <a href="registro.html" class="btn">Rellenar Formulario de Registro</a>
         </section>
     </div>
 
     <footer>
-        <p>&copy; 2026 Casa Josefas. Todos los derechos reservados. | Gestión de Alquiler Vacacional</p>
+        <p>&copy; 2026 Casa Josefas. Todos los derechos reservados. | Alquiler Vacacional</p>
     </footer>
 
 </body>
+</html>
 </html>
