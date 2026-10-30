@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Casa Josefas</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #fcfbf9; color: #2b2b2b; max-width: 600px; margin: 40px auto; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; border: 1px solid #e3ded8; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        h1 { color: #2d5a27; font-size: 22px; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input { width: 100%; padding: 10px; border: 1px solid #e3ded8; border-radius: 6px; box-sizing: border-box; }
+        button { background: #2d5a27; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; width: 100%; }
+        button:hover { background: #1e3c1a; }
+        .lista-bloqueos { margin-top: 20px; background: #fdfcf9; padding: 15px; border-radius: 6px; border: 1px solid #e3ded8; }
+        .item-bloqueo { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .btn-eliminar { background: #d9534f; padding: 5px 10px; font-size: 12px; width: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Panel de Control - Casa Josefas</h1>
+        <p>Bloquea días manualmente si te entran reservas por teléfono o canales externos.</p>
+        
+        <div class="form-group">
+            <label for="fechaBloqueo">Seleccionar día a bloquear:</label>
+            <input type="date" id="fechaBloqueo">
+        </div>
+        <button onclick="bloquearDia()">Bloquear Día</button>
+
+        <div class="lista-bloqueos">
+            <h3>Días bloqueados manualmente:</h3>
+            <div id="contenedorBloqueos">Sin bloqueos manuales activos.</div>
+        </div>
+    </div>
+
+    <script>
+        function cargarBloqueos() {
+            let bloqueos = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+            let contenedor = document.getElementById('contenedorBloqueos');
+            
+            if (bloqueos.length === 0) {
+                contenedor.innerHTML = "Sin bloqueos manuales activos.";
+                return;
+            }
+
+            let html = "";
+            bloqueos.sort().forEach((fecha, index) => {
+                html += `<div class="item-bloqueo"><span>${fecha}</span> <button class="btn-eliminar" onclick="eliminarBloqueo(${index})">Desbloquear</button></div>`;
+            });
+            contenedor.innerHTML = html;
+        }
+
+        function bloquearDia() {
+            let fecha = document.getElementById('fechaBloqueo').value;
+            if (!fecha) {
+                alert("Selecciona una fecha válida.");
+                return;
+            }
+
+            let bloqueos = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+            if (!bloqueos.includes(fecha)) {
+                bloqueos.push(fecha);
+                localStorage.setItem('casaJosefasBloqueos', JSON.stringify(bloqueos));
+                alert(`Día ${fecha} bloqueado con éxito.`);
+                cargarBloqueos();
+            } else {
+                alert("Ese día ya estaba bloqueado.");
+            }
+        }
+
+        function eliminarBloqueo(index) {
+            let bloqueos = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+            bloqueos.splice(index, 1);
+            localStorage.setItem('casaJosefasBloqueos', JSON.stringify(bloqueos));
+            cargarBloqueos();
+        }
+
+        cargarBloqueos();
+    </script>
+</body>
+</html>
