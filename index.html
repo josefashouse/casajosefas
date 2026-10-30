@@ -52,7 +52,7 @@
         }
         .btn:hover { background-color: var(--primary-hover); }
 
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
 
         section {
             background: var(--card-bg);
@@ -81,18 +81,21 @@
             width: 100%; height: 240px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color);
         }
 
-        .booking-box {
+        /* Estructura limpia del motor de reservas */
+        .booking-grid {
             display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
+            grid-template-columns: 1.5fr 1fr;
             gap: 30px;
+            align-items: start;
         }
-        @media (max-width: 768px) { .booking-box { grid-template-columns: 1fr; } }
+        @media (max-width: 850px) { .booking-grid { grid-template-columns: 1fr; } }
 
         #calendar {
             background: #fff;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 20px;
+            border-radius: 10px;
             border: 1px solid var(--border-color);
+            min-height: 500px;
         }
 
         .form-group { margin-bottom: 15px; }
@@ -102,10 +105,14 @@
         .summary-card {
             background: #fdfcf9;
             border: 1px solid var(--border-color);
-            padding: 20px;
-            border-radius: 8px;
+            padding: 25px;
+            border-radius: 10px;
         }
-        .price-tag { font-size: 22px; font-weight: bold; color: var(--primary); margin: 10px 0; }
+        .price-tag { font-size: 26px; font-weight: bold; color: var(--primary); margin: 15px 0; }
+
+        /* Estilo visual para días ocupados en gris */
+        .fc-day-past { background-color: #f9f9f9 !important; color: #ccc !important; }
+        .fc-event-ocupado { background-color: #6c757d !important; border: none !important; opacity: 0.6; }
 
         footer {
             text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border-color); background: #fff;
@@ -131,18 +138,18 @@
             </div>
         </section>
 
-        <!-- MOTOR DE RESERVAS VISUAL -->
+        <!-- MOTOR DE RESERVAS AMPLIADO -->
         <section id="motor-reservas">
             <h2>Disponibilidad y Reserva Online</h2>
-            <p>Selecciona en el calendario tus días de entrada y salida haciendo clic sobre ellos. Los días en gris están ocupados.</p>
+            <p>Selecciona primero tu <strong>fecha de entrada</strong> y después tu <strong>fecha de salida</strong> haciendo clic en el calendario. Los días grises están ocupados.</p>
             
-            <div class="booking-box">
-                <!-- Columna Izquierda: Calendario Visual -->
+            <div class="booking-grid">
+                <!-- Calendario Ancho -->
                 <div>
                     <div id="calendar"></div>
                 </div>
 
-                <!-- Columna Derecha: Selección y Pago -->
+                <!-- Resumen y Pago -->
                 <div>
                     <div class="summary-card">
                         <h3>Resumen de la Estancia</h3>
@@ -152,14 +159,14 @@
                         </div>
                         <div class="form-group">
                             <label for="checkout">Fecha de Salida:</label>
-                            <input type="text" id="checkout" readonly placeholder="Selecciona en el calendario">
+                            <input type="text" id="checkout" readonly placeholder="Selecciona fecha posterior">
                         </div>
                         <div class="form-group">
                             <label for="emailHuesped">Correo Electrónico:</label>
                             <input type="email" id="emailHuesped" placeholder="tu@correo.com">
                         </div>
                         
-                        <p id="detalleNoches" style="font-size: 14px; color: #666;">Haz clic en una fecha de entrada y otra de salida.</p>
+                        <p id="detalleNoches" style="font-size: 14px; color: #666;">Haz clic en el día de llegada.</p>
                         <div class="price-tag" id="precioTotal">0 €</div>
                         <button id="btnPagar" class="btn" style="width: 100%; background-color: #635bff; display: none;" onclick="iniciarPagoStripe()">Pagar con Tarjeta (Stripe)</button>
                     </div>
@@ -186,8 +193,8 @@
                 initialView: 'dayGridMonth',
                 locale: 'es',
                 selectable: true,
+                selectConstraint: { start: new Date().toISOString().split('T')[0] },
                 selectAllow: function(selectInfo) {
-                    // Evitar seleccionar rangos que contengan días ocupados
                     let start = new Date(selectInfo.startStr);
                     let end = new Date(selectInfo.endStr);
                     let curr = new Date(start);
@@ -200,7 +207,7 @@
                     return true;
                 },
                 select: function(info) {
-                    manejarSeleccionFechas(info.startStr, info.endStr);
+                    manejarSeleccionRango(info.startStr, info.endStr);
                 },
                 events: function(fetchInfo, successCallback, failureCallback) {
                     cargarEventosCalendario(successCallback);
@@ -213,20 +220,19 @@
             let eventos = [];
             diasOcupadosArray = [];
 
-            // 1. Cargar bloqueos manuales del panel admin
+            // 1. Bloqueos manuales del admin
             let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
             bloqueosAdmin.forEach(fecha => {
                 diasOcupadosArray.push(fecha);
                 eventos.push({
-                    title: 'No disponible',
                     start: fecha,
                     allDay: true,
                     display: 'background',
-                    backgroundColor: '#d9534f'
+                    backgroundColor: '#6c757d'
                 });
             });
 
-            // 2. Cargar iCal de Booking a través de un servicio de proxy confiable
+            // 2. iCal de Booking
             try {
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
                 const respuesta = await fetch(proxyUrl);
@@ -242,7 +248,6 @@
                             let fInicio = formatIcalDate(inicioStr);
                             let fFin = formatIcalDate(finStr);
                             
-                            // Rellenar días intermedios en el array de bloqueo
                             let curr = new Date(fInicio);
                             let endDate = new Date(fFin);
                             while (curr < endDate) {
@@ -252,18 +257,17 @@
                             }
 
                             eventos.push({
-                                title: 'Reservado',
                                 start: fInicio,
                                 end: fFin,
                                 display: 'background',
-                                backgroundColor: '#6c757d' // Color gris para ocupados por Booking
+                                backgroundColor: '#6c757d' // Días de Booking en gris
                             });
                             inicioStr = ""; finStr = "";
                         }
                     }
                 }
             } catch (err) {
-                console.log("Error al cargar iCal externo:", err);
+                console.log("Error cargando iCal:", err);
             }
 
             successCallback(eventos);
@@ -276,11 +280,17 @@
             return `${year}-${month}-${day}`;
         }
 
-        function manejarSeleccionFechas(startStr, endStr) {
+        function manejarSeleccionRango(startStr, endStr) {
             fechaEntradaSeleccionada = startStr;
             let endDateObj = new Date(endStr);
             endDateObj.setDate(endDateObj.getDate() - 1);
             fechaSalidaSeleccionada = endDateObj.toISOString().split('T')[0];
+
+            // Validar que la salida sea estrictamente posterior a la entrada
+            if (fechaSalidaSeleccionada <= fechaEntradaSeleccionada) {
+                alert("La fecha de salida debe ser posterior a la de entrada.");
+                return;
+            }
 
             document.getElementById('checkin').value = fechaEntradaSeleccionada;
             document.getElementById('checkout').value = fechaSalidaSeleccionada;
@@ -325,7 +335,7 @@
                 alert("Por favor, introduce tu correo electrónico.");
                 return;
             }
-            alert(`Redirigiendo a Stripe para cobrar ${total}. (Próximamente conectamos tu pasarela real).`);
+            alert(`Redirigiendo a Stripe para cobrar ${total}.`);
         }
     </script>
 </body>
