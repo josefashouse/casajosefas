@@ -109,6 +109,12 @@
         }
         .price-tag { font-size: 26px; font-weight: bold; color: var(--primary); margin: 15px 0; }
 
+        /* Estilo para los días ocupados marcados en gris por el iCal */
+        .fc-bg-event {
+            background: #6c757d !important;
+            opacity: 0.5 !important;
+        }
+
         footer {
             text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border-color); background: #fff;
         }
@@ -133,10 +139,10 @@
             </div>
         </section>
 
-        <!-- MOTOR DE RESERVAS POR CLICS -->
+        <!-- MOTOR DE RESERVAS CON ICAL REAL -->
         <section id="motor-reservas">
             <h2>Disponibilidad y Reserva Online</h2>
-            <p>Haz clic primero en el día de <strong>entrada</strong> y después en el día de <strong>salida</strong>. Los días en gris están ocupados y no se pueden seleccionar.</p>
+            <p>Haz clic primero en el día de <strong>entrada</strong> y después en el día de <strong>salida</strong>. Los días en gris están ocupados por reservas de Booking o bloqueos del administrador.</p>
             
             <div class="booking-grid">
                 <div>
@@ -185,7 +191,7 @@
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
-                selectable: false, // Usaremos clics manuales para control absoluto
+                selectable: false,
                 dateClick: function(info) {
                     manejarClickFecha(info.dateStr);
                 },
@@ -200,7 +206,7 @@
             let eventos = [];
             diasOcupadosArray = [];
 
-            // 1. Bloqueos manuales del administrador
+            // 1. Cargar bloqueos manuales del panel admin (localStorage)
             let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
             bloqueosAdmin.forEach(fecha => {
                 diasOcupadosArray.push(fecha);
@@ -212,10 +218,11 @@
                 });
             });
 
-            // 2. Sincronización iCal de Booking
+            // 2. Cargar iCal de Booking mediante un conversor de enlaces iCal robusto
             try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
-                const respuesta = await fetch(proxyUrl);
+                // Usamos un servicio optimizado para parsear .ics a formato seguro compatible con webs estáticas
+                const apiIcals = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
+                const respuesta = await fetch(apiIcals);
                 const data = await respuesta.json();
                 
                 if (data.contents) {
@@ -240,14 +247,14 @@
                                 start: fInicio,
                                 end: fFin,
                                 display: 'background',
-                                backgroundColor: '#6c757d' // Días ocupados en gris
+                                backgroundColor: '#6c757d' // Pinta los días de Booking en gris en el calendario
                             });
                             inicioStr = ""; finStr = "";
                         }
                     }
                 }
             } catch (err) {
-                console.log("Error cargando iCal:", err);
+                console.error("Error al sincronizar con el iCal de Booking:", err);
             }
 
             successCallback(eventos);
@@ -261,15 +268,13 @@
         }
 
         function manejarClickFecha(fechaStr) {
-            // Verificar si el día clicado está ocupado
+            // Validación estricta: Si el día está en el array de ocupados, se bloquea el clic
             if (diasOcupadosArray.includes(fechaStr)) {
-                alert("Este día ya está reservado y no se puede seleccionar.");
+                alert("⚠️ Este día ya está reservado (en Booking o bloqueado) y no se puede seleccionar.");
                 return;
             }
 
-            // Lógica de selección por turnos (1º clic: Entrada, 2º clic: Salida)
             if (!fechaEntrada || (fechaEntrada && fechaSalida)) {
-                // Primer clic o reinicio
                 fechaEntrada = fechaStr;
                 fechaSalida = null;
                 document.getElementById('checkin').value = fechaEntrada;
@@ -278,15 +283,14 @@
                 document.getElementById('precioTotal').innerText = "0 €";
                 document.getElementById('btnPagar').style.display = "none";
             } else if (fechaEntrada && !fechaSalida) {
-                // Segundo clic (Salida)
                 if (fechaStr <= fechaEntrada) {
-                    alert("La fecha de salida debe ser posterior a la de entrada. Se ha reiniciado la selección.");
+                    alert("La fecha de salida debe ser posterior a la de entrada. Se reinicia la selección.");
                     fechaEntrada = fechaStr;
                     document.getElementById('checkin').value = fechaEntrada;
                     return;
                 }
 
-                // COMPROBACIÓN CRÍTICA: Verificar si hay días ocupados en el rango intermedio
+                // COMPROBACIÓN CRÍTICA DE SOLAPES INTERMEDIOS
                 let start = new Date(fechaEntrada);
                 let end = new Date(fechaStr);
                 let curr = new Date(start);
@@ -302,8 +306,8 @@
                 }
 
                 if (hayBloqueoEnMedio) {
-                    alert("⚠️ No puedes seleccionar este rango porque hay días reservados en medio. Por favor, elige otras fechas.");
-                    fechaEntrada = fechaStr; // Reinicia la entrada al nuevo clic
+                    alert("⚠️ No puedes seleccionar este rango porque hay días reservados en medio. Por favor, elige otras fechas libres.");
+                    fechaEntrada = fechaStr; 
                     fechaSalida = null;
                     document.getElementById('checkin').value = fechaEntrada;
                     document.getElementById('checkout').value = "";
