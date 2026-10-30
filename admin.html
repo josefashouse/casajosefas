@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración | Casa Josefas</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #fcfbf9; color: #2b2b2b; max-width: 500px; margin: 80px auto; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 10px; border: 1px solid #e3ded8; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        body { font-family: 'Segoe UI', sans-serif; background: #fcfbf9; color: #2b2b2b; max-width: 900px; margin: 40px auto; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; border: 1px solid #e3ded8; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 25px; }
         h1 { color: #2d5a27; font-size: 22px; margin-top: 0; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; }
@@ -17,32 +17,43 @@
         .item-bloqueo { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
         .btn-eliminar { background: #d9534f; padding: 5px 10px; font-size: 12px; width: auto; }
         
-        /* Ocultar panel por defecto de forma estricta */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #e3ded8; padding: 10px; text-align: left; font-size: 14px; }
+        th { background: #f7f5f0; color: #2d5a27; }
+
         #panelAdmin { display: none; }
         #loginBox { display: block; }
         .error-pass { color: #d9534f; font-size: 13px; margin-top: 5px; display: none; }
+        .btn-salir { background: #6c757d; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <!-- Pantalla de Login estricta -->
-        <div id="loginBox">
-            <h1>Acceso Administrador</h1>
-            <p>Introduce la contraseña de seguridad para acceder al panel de control.</p>
-            <div class="form-group">
-                <label for="passwordAdmin">Contraseña:</label>
-                <input type="password" id="passwordAdmin" placeholder="Contraseña">
-                <div id="errorPass" class="error-pass">Contraseña incorrecta.</div>
-            </div>
-            <button onclick="verificarPassword()">Entrar</button>
+    <!-- Pantalla de Login estricta -->
+    <div id="loginBox" class="card">
+        <h1>Acceso Administrador</h1>
+        <p>Introduce la contraseña de seguridad para acceder al panel de control.</p>
+        <div class="form-group">
+            <label for="passwordAdmin">Contraseña:</label>
+            <input type="password" id="passwordAdmin" placeholder="Contraseña">
+            <div id="errorPass" class="error-pass">Contraseña incorrecta.</div>
+        </div>
+        <button onclick="verificarPassword()">Entrar</button>
+    </div>
+
+    <!-- Panel de Control Protegido -->
+    <div id="panelAdmin">
+        <!-- Sección de Historial de Reservas Web (Con opción de cancelar) -->
+        <div class="card">
+            <h1>Gestión de Reservas Online (Web)</h1>
+            <p>Listado de reservas hechas desde la web. Si cancelas una reserva, los días quedarán libres automáticamente.</p>
+            <div id="contenedorReservasWeb">Sin reservas registradas todavía.</div>
         </div>
 
-        <!-- Panel de Control Protegido -->
-        <div id="panelAdmin">
-            <h1>Panel de Control - Casa Josefas</h1>
-            <p>Bloquea días manualmente si te entran reservas por teléfono o canales externos.</p>
-            
+        <!-- Sección de Bloqueos Manuales -->
+        <div class="card">
+            <h1>Gestión de Bloqueos Manuales</h1>
+            <p>Bloquea días individualmente si entran reservas por teléfono o canales externos.</p>
             <div class="form-group">
                 <label for="fechaBloqueo">Seleccionar día a bloquear:</label>
                 <input type="date" id="fechaBloqueo">
@@ -53,23 +64,46 @@
                 <h3>Días bloqueados manualmente:</h3>
                 <div id="contenedorBloqueos">Sin bloqueos manuales activos.</div>
             </div>
+
+            <button class="btn btn-salir" onclick="cerrarSesion()">Cerrar Sesión de Administrador</button>
         </div>
     </div>
 
     <script>
         const PASSWORD_SECRETA = "josefas2026";
 
+        window.onload = function() {
+            if (sessionStorage.getItem('adminLogueado') === 'true') {
+                mostrarPanel();
+            }
+        };
+
         function verificarPassword() {
             let passInput = document.getElementById('passwordAdmin').value;
             let errorDiv = document.getElementById('errorPass');
 
             if (passInput === PASSWORD_SECRETA) {
-                document.getElementById('loginBox').style.display = "none";
-                document.getElementById('panelAdmin').style.display = "block";
-                cargarBloqueos();
+                sessionStorage.setItem('adminLogueado', 'true');
+                mostrarPanel();
             } else {
                 errorDiv.style.display = "block";
             }
+        }
+
+        function mostrarPanel() {
+            document.getElementById('loginBox').style.display = "none";
+            document.getElementById('panelAdmin').style.display = "block";
+            cargarDatosAdmin();
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem('adminLogueado');
+            location.reload();
+        }
+
+        function cargarDatosAdmin() {
+            cargarBloqueos();
+            cargarReservasWeb();
         }
 
         function cargarBloqueos() {
@@ -111,6 +145,75 @@
             bloqueos.splice(index, 1);
             localStorage.setItem('casaJosefasBloqueos', JSON.stringify(bloqueos));
             cargarBloqueos();
+        }
+
+        function cargarReservasWeb() {
+            let reservas = JSON.parse(localStorage.getItem('casaJosefasReservasWeb') || '[]');
+            let contenedor = document.getElementById('contenedorReservasWeb');
+
+            if (reservas.length === 0) {
+                contenedor.innerHTML = "Sin reservas registradas todavía.";
+                return;
+            }
+
+            let tabla = `<table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Huésped (Email)</th>
+                        <th>Personas</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Total</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            reservas.forEach((res, index) => {
+                tabla += `<tr>
+                    <td>${res.fechaReserva}</td>
+                    <td>${res.email}</td>
+                    <td>${res.huespedes} pers.</td>
+                    <td>${res.entrada}</td>
+                    <td>${res.salida}</td>
+                    <td><b>${res.total}</b></td>
+                    <td><button class="btn-eliminar" onclick="eliminarReservaWeb(${index})">Cancelar / Borrar</button></td>
+                </tr>`;
+            });
+
+            tabla += `</tbody></table>`;
+            contenedor.innerHTML = tabla;
+        }
+
+        function eliminarReservaWeb(index) {
+            if (!confirm("¿Estás seguro de cancelar esta reserva? Los días volverán a quedar libres en el calendario.")) return;
+
+            let reservas = JSON.parse(localStorage.getItem('casaJosefasReservasWeb') || '[]');
+            let reservaAEliminar = reservas[index];
+
+            // Al borrar la reserva, liberamos los días del bloqueadmin para que el calendario se abra
+            let start = new Date(reservaAEliminar.entrada);
+            let end = new Date(reservaAEliminar.salida);
+            let curr = new Date(start);
+            let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+
+            while (curr < end) {
+                let iso = curr.toISOString().split('T')[0];
+                let pos = bloqueosAdmin.indexOf(iso);
+                if (pos !== -1) {
+                    bloqueosAdmin.splice(pos, 1);
+                }
+                curr.setDate(curr.getDate() + 1);
+            }
+            localStorage.setItem('casaJosefasBloqueos', JSON.stringify(bloqueosAdmin));
+
+            // Borrar de la lista de reservas
+            reservas.splice(index, 1);
+            localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(reservas));
+
+            alert("Reserva cancelada y fechas liberadas correctamente.");
+            cargarDatosAdmin();
         }
     </script>
 </body>
