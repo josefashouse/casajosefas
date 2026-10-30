@@ -6,8 +6,6 @@
     <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
     <!-- FullCalendar CSS y JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
-    <!-- SDK de Stripe para pagos -->
-    <script src="https://js.stripe.com/v3/"></script>
     <style>
         :root {
             --primary: #2d5a27;
@@ -176,7 +174,7 @@
                         
                         <p id="detalleNoches" style="font-size: 14px; color: #666;">Haz clic en el día de llegada.</p>
                         <div class="price-tag" id="precioTotal">0 €</div>
-                        <button id="btnPagar" class="btn" style="width: 100%; background-color: #635bff; display: none;" onclick="iniciarPagoStripe()">Pagar con Tarjeta (Stripe)</button>
+                        <button id="btnPagar" class="btn" style="width: 100%; background-color: #635bff; display: none;" onclick="redirigirPagoStripe()">Pagar con Tarjeta (Stripe)</button>
                     </div>
                 </div>
             </div>
@@ -188,9 +186,6 @@
     </footer>
 
     <script>
-        // Inicializar Stripe con tu clave publicable de prueba
-        const stripe = Stripe('pk_test_51UVaHaFZ7FVTIxKtUrS6IHKZwBwmh2PmtnYC4KC00XXLeM1VBZHnPw6yLxZVVYxw1SSCr9upJtlHDHIg6KqEk6Sr00jBzSoAiX');
-
         let calendar;
         let fechaEntrada = null;
         let fechaSalida = null;
@@ -371,7 +366,7 @@
             return re.test(email);
         }
 
-        function iniciarPagoStripe() {
+        function redirigirPagoStripe() {
             const emailInput = document.getElementById('emailHuesped').value.trim();
             const huespedes = document.getElementById('numHuespedes').value;
 
@@ -387,7 +382,7 @@
                 return;
             }
 
-            // SIMULACIÓN DE BLOQUEO LOCAL Y REGISTRO EN ADMIN
+            // 1. Guardar bloqueo localmente para que el calendario se ponga en gris de inmediato
             let start = new Date(fechaEntrada);
             let end = new Date(fechaSalida);
             let curr = new Date(start);
@@ -402,6 +397,7 @@
             }
             localStorage.setItem('casaJosefasBloqueos', JSON.stringify(bloqueosAdmin));
 
+            // 2. Registrar la reserva en el historial del panel admin
             let listaReservas = JSON.parse(localStorage.getItem('casaJosefasReservasWeb') || '[]');
             listaReservas.push({
                 email: emailInput,
@@ -413,10 +409,11 @@
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // Como estamos en una prueba de frontend directa con Stripe test mode,
-            // informamos y recargamos para simular la pasarela correctamente de forma segura.
-            alert(`✅ Conectado con Stripe (Modo Test).\n\nReserva procesada para ${emailInput} (${huespedes} huéspedes) por un total de ${precioCalculadoTotal} €.\n\nLas fechas han quedado bloqueadas en el calendario local.`);
-            location.reload();
+            // 3. Redirigir al enlace de pago oficial de Stripe en modo test
+            const enlaceStripeTest = "https://buy.stripe.com/test_5kQ8wPeqcept2lxI7l17N600";
+            
+            alert(`✅ Reserva registrada temporalmente y fechas bloqueadas.\n\nTe vamos a redirigir a la pasarela de prueba de Stripe para completar la simulación del pago.`);
+            window.location.href = enlaceStripeTest;
         }
     </script>
 </body>
