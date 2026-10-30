@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
+    <!-- Librería para manejar fechas y calendarios iCal fácilmente -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <style>
         :root {
             --primary: #2d5a27;
@@ -53,18 +55,13 @@
             font-weight: 600;
             display: inline-block;
             transition: background 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
         }
 
         .btn:hover {
             background-color: var(--primary-hover);
-        }
-
-        .btn-booking {
-            background-color: #003580;
-        }
-
-        .btn-booking:hover {
-            background-color: #00224f;
         }
 
         .container {
@@ -110,13 +107,49 @@
             transform: scale(1.02);
         }
 
-        .info-box {
+        /* Estilos del Motor de Reservas */
+        .booking-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .booking-box { grid-template-columns: 1fr; }
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .summary-card {
             background: #fdfcf9;
-            border-left: 4px solid var(--primary);
+            border: 1px solid var(--border-color);
             padding: 20px;
-            margin: 20px 0;
-            border-radius: 0 8px 8px 0;
-            font-size: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .price-tag {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
         }
 
         footer {
@@ -127,12 +160,6 @@
             border-top: 1px solid var(--border-color);
             background: #fff;
         }
-
-        @media (max-width: 600px) {
-            header { padding: 80px 15px; }
-            header h1 { font-size: 32px; }
-            section { padding: 20px; }
-        }
     </style>
 </head>
 <body>
@@ -140,68 +167,81 @@
     <header>
         <h1>Casa Josefas</h1>
         <p>Tu refugio de tranquilidad, confort y naturaleza en O Porriño</p>
-        <a href="https://www.booking.com/hotel/es/casa-josefas-s.es.html" target="_blank" class="btn btn-booking">Ver Disponibilidad y Reservar</a>
+        <a href="#motor-reservas" class="btn">Reservar Estancia Directa</a>
     </header>
 
     <div class="container">
         <!-- Presentación -->
         <section>
             <h2>Bienvenidos a Casa Josefas</h2>
-            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado para familias o pequeños grupos. Cuidamos cada detalle para garantizar una estancia cómoda, combinando estancias cálidas con acabados en madera y todas las comodidades actuales.</p>
+            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado para familias o pequeños grupos. Cuidamos cada detalle para garantizar una estancia cómoda.</p>
             
             <div class="grid-fotos">
-                <img src="images/pasillo.jpg" alt="Pasillo y recibidor de Casa Josefas" class="foto-galeria">
-                <img src="images/sello-peregrino.jpg" alt="Detalle de hospitalidad y sello peregrino" class="foto-galeria">
+                <img src="images/pasillo.jpg" alt="Pasillo y recibidor" class="foto-galeria">
+                <img src="images/sello-peregrino.jpg" alt="Detalle de hospitalidad" class="foto-galeria">
             </div>
         </section>
 
         <!-- Zona de Estar y Cocina -->
         <section>
             <h2>Cocina y Espacio Social</h2>
-            <p>La casa dispone de una cocina moderna y completamente equipada integrada de manera fluida con una elegante barra de salón y una zona de comedor con bancos acolchados, ideal para compartir momentos únicos en buena compañía[cite: 5, 54, 55].</p>
+            <p>Cocina moderna y completamente equipada integrada con barra de salón y comedor con bancos acolchados[cite: 5, 54, 55].</p>
             
             <div class="grid-fotos">
-                <img src="images/barra-salon.jpg" alt="Barra del salón y plantas" class="foto-galeria">
-                <img src="images/salon-comedor.jpg" alt="Comedor interior con bancos acolchados" class="foto-galeria">
+                <img src="images/barra-salon.jpg" alt="Barra del salón" class="foto-galeria">
+                <img src="images/salon-comedor.jpg" alt="Comedor interior" class="foto-galeria">
             </div>
         </section>
 
-        <!-- Habitaciones -->
+        <!-- Habitaciones y Exteriores -->
         <section>
-            <h2>Habitaciones y Descanso</h2>
-            <p>Disponemos de habitaciones amplias, luminosas y provistas de ropa de cama de alta calidad, armarios espaciosos y un ambiente sumamente acogedor para asegurar el mejor descanso[cite: 16].</p>
+            <h2>Habitaciones y Piscina</h2>
+            <p>Habitaciones luminosas con ropa de cama de calidad[cite: 16] y un magnífico jardín exterior con piscina[cite: 14, 48].</p>
             
             <div class="grid-fotos">
                 <img src="images/habitacion-principal.jpg" alt="Habitación principal" class="foto-galeria">
-            </div>
-        </section>
-
-        <!-- Exteriores y Piscina -->
-        <section>
-            <h2>Exteriores, Jardín y Piscina</h2>
-            <p>Disfruta al aire libre de nuestro magnífico jardín privado y de la piscina rectangular totalmente equipada con zona de descanso[cite: 14, 48].</p>
-            
-            <div class="grid-fotos">
-                <img src="images/jardin.jpg" alt="Jardín exterior de la casa" class="foto-galeria">
                 <img src="images/psicina.jpg" alt="Piscina exterior" class="foto-galeria">
             </div>
         </section>
 
-        <!-- Sección de Reservas y Registro (El orden lógico) -->
-        <section id="reservas">
-            <h2>¿Cómo reservar o registrar tu estancia?</h2>
-            <p>Para gestionar tu reserva con total garantía y consultar los calendarios libres en tiempo real, haz clic en nuestro canal oficial:</p>
-            <div style="text-align: center; margin: 25px 0;">
-                <a href="https://www.booking.com/hotel/es/casa-josefas-s.es.html" target="_blank" class="btn btn-booking">Reservar en Booking.com</a>
-            </div>
+        <!-- MOTOR DE RESERVAS DIRECTAS -->
+        <section id="motor-reservas">
+            <h2>Calcula tu estancia y Reserva</h2>
+            <p>Selecciona tus fechas de entrada y salida. El sistema calcula automáticamente el precio (200€ de domingo a jueves / 220€ viernes y sábados) sincronizado con nuestro calendario de disponibilidad.</p>
+            
+            <div class="booking-box">
+                <div>
+                    <div class="form-group">
+                        <label for="checkin">Fecha de Entrada:</label>
+                        <input type="date" id="checkin" onchange="calcularPrecio()">
+                    </div>
+                    <div class="form-group">
+                        <label for="checkout">Fecha de Salida:</label>
+                        <input type="date" id="checkout" onchange="calcularPrecio()">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailHuesped">Correo Electrónico (para recibir la confirmación):</label>
+                        <input type="email" id="emailHuesped" placeholder="tu@correo.com">
+                    </div>
+                </div>
 
-            <div class="info-box">
-                <strong>¿Ya tienes tu reserva confirmada?</strong><br>
-                Si vas a alojarte próximamente con nosotros, recuerda rellenar el formulario obligatorio de parte de viajeros antes de tu llegada:
-                <div style="margin-top: 15px;">
-                    <a href="registro.html" class="btn">Acceder al Formulario de Registro</a>
+                <div>
+                    <div class="summary-card">
+                        <h3>Resumen de la Reserva</h3>
+                        <p id="detalleNoches">Selecciona fechas para ver el desglose.</p>
+                        <div class="price-tag" id="precioTotal">0 €</div>
+                        <!-- Botón de pago simulado con Stripe (aquí conectarás tu enlace de pago de Stripe cuando lo crees) -->
+                        <button id="btnPagar" class="btn" style="width: 100%; margin-top: 15px; background-color: #635bff; display: none;" onclick="iniciarPagoStripe()">Pagar con Tarjeta (Stripe)</button>
+                    </div>
                 </div>
             </div>
+        </section>
+
+        <!-- Formulario de Registro posterior -->
+        <section>
+            <h2>¿Ya has completado tu pago?</h2>
+            <p>Si ya has realizado tu reserva online, recuerda rellenar el formulario obligatorio de parte de viajeros:</p>
+            <a href="registro.html" class="btn" style="margin-top: 10px;">Acceder al Formulario de Registro</a>
         </section>
     </div>
 
@@ -209,5 +249,62 @@
         <p>&copy; 2026 Casa Josefas. Todos los derechos reservados. | Alquiler Vacacional</p>
     </footer>
 
+    <script>
+        // Sincronización iCal de Booking (Enlace oficial de Casa Josefas)
+        const icalBookingUrl = "https://ical.booking.com/v1/export?t=65701bce-5657-4e08-b1cb-8651905f9070";
+
+        function calcularPrecio() {
+            const checkinVal = document.getElementById('checkin').value;
+            const checkoutVal = document.getElementById('checkout').value;
+            const detalle = document.getElementById('detalleNoches');
+            const totalElem = document.getElementById('precioTotal');
+            const btnPagar = document.getElementById('btnPagar');
+
+            if (!checkinVal || !checkoutVal) return;
+
+            let start = new Date(checkinVal);
+            let end = new Date(checkoutVal);
+            let diffTime = end - start;
+            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays <= 0) {
+                detalle.innerText = "La fecha de salida debe ser posterior a la de entrada.";
+                totalElem.innerText = "0 €";
+                btnPagar.style.display = "none";
+                return;
+            }
+
+            let precioTotal = 0;
+            let current = new Date(start);
+            let desgloseTexto = "";
+
+            for (let i = 0; i < diffDays; i++) {
+                let dayOfWeek = current.getDay(); // 0 es Domingo, 5 es Viernes, 6 es Sábado
+                if (dayOfWeek === 5 || dayOfWeek === 6) {
+                    precioTotal += 220; // Viernes y Sábado
+                } else {
+                    precioTotal += 200; // Domingo a Jueves
+                }
+                current.setDate(current.getDate() + 1);
+            }
+
+            detalle.innerText = `${diffDays} noche(s) seleccionada(s).`;
+            totalElem.innerText = precioTotal + " €";
+            btnPagar.style.display = "block";
+        }
+
+        function iniciarPagoStripe() {
+            const email = document.getElementById('emailHuesped').value;
+            const total = document.getElementById('precioTotal').innerText;
+
+            if (!email) {
+                alert("Por favor, introduce tu correo electrónico antes de continuar con el pago.");
+                return;
+            }
+
+            // Aquí se conectará tu enlace de Stripe Checkout en el futuro
+            alert(`Redirigiendo a pasarela segura de Stripe para el cobro de ${total}. (Próximamente conectaremos tu cuenta de Stripe).`);
+        }
+    </script>
 </body>
 </html>
