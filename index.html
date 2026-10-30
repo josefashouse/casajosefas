@@ -6,8 +6,6 @@
     <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
     <!-- FullCalendar CSS y JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
-    <!-- SDK de Stripe para pagos -->
-    <script src="https://js.stripe.com/v3/"></script>
     <style>
         :root {
             --primary: #2d5a27;
@@ -176,7 +174,7 @@
                         
                         <p id="detalleNoches" style="font-size: 14px; color: #666;">Haz clic en el día de llegada.</p>
                         <div class="price-tag" id="precioTotal">0 €</div>
-                        <button id="btnPagar" class="btn" style="width: 100%; background-color: #635bff; display: none;" onclick="iniciarPagoStripe()">Pagar con Tarjeta (Stripe)</button>
+                        <button id="btnPagar" class="btn" style="width: 100%; background-color: #635bff; display: none;" onclick="redirigirPagoStripe()">Pagar con Tarjeta (Stripe)</button>
                     </div>
                 </div>
             </div>
@@ -188,9 +186,6 @@
     </footer>
 
     <script>
-        // Inicializar Stripe con tu clave publicable de prueba
-        const stripe = Stripe('pk_test_51UVaHaFZ7FVTIxKtUrS6IHKZwBwmh2PmtnYC4KC00XXLeM1VBZHnPw6yLxZVVYxw1SSCr9upJtlHDHIg6KqEk6Sr00jBzSoAiX');
-
         let calendar;
         let fechaEntrada = null;
         let fechaSalida = null;
@@ -354,7 +349,7 @@
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         }
 
-        function iniciarPagoStripe() {
+        function redirigirPagoStripe() {
             const emailInput = document.getElementById('emailHuesped').value.trim();
             const huespedes = document.getElementById('numHuespedes').value;
 
@@ -389,17 +384,9 @@
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // 3. Redirigir al enlace oficial de Stripe usando un parámetro limpio de precio personalizado
-            // Al añadir ?prefilled_email y usar tu enlace base, garantizamos que registre los datos del cliente.
-            // Para el importe exacto dinámico con enlaces de pago de Stripe sin servidor, 
-            // la forma alternativa perfecta es redirigir al enlace añadiendo el parámetro de cantidad.
-            const urlBaseStripe = "https://buy.stripe.com/test_5kQ8wPeqcepT2Ix17l7N600";
-            
-            // Truco seguro: Como el enlace base es fijo, pasamos el correo prellenado. 
-            // Para que el importe sea el correcto sin que Stripe fuerce los 200€ fijos, 
-            // el truco definitivo es que tu enlace de Stripe en el panel tenga activado un producto base flexible 
-            // o bien utilizar la redirección limpia. 
-            window.location.href = `${urlBaseStripe}?prefilled_email=${encodeURIComponent(emailInput)}`;
+            // 3. Redirigir a tu nuevo enlace de Stripe pasando la cantidad exacta calculada
+            const urlBaseStripe = "https://buy.stripe.com/test_5kQ8wP95Sgy1gzn7vJ7N601";
+            window.location.href = `${urlBaseStripe}?prefilled_email=${encodeURIComponent(emailInput)}&quantity=${precioCalculadoTotal}`;
         }
     </script>
 </body>
