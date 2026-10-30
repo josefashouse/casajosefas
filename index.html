@@ -59,6 +59,14 @@
             background-color: var(--primary-hover);
         }
 
+        .btn-booking {
+            background-color: #003580;
+        }
+
+        .btn-booking:hover {
+            background-color: #00224f;
+        }
+
         .container {
             max-width: 1000px;
             margin: 40px auto;
@@ -102,6 +110,15 @@
             transform: scale(1.02);
         }
 
+        .info-box {
+            background: #fdfcf9;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 15px;
+        }
+
         footer {
             text-align: center;
             padding: 30px;
@@ -123,7 +140,7 @@
     <header>
         <h1>Casa Josefas</h1>
         <p>Tu refugio de tranquilidad, confort y naturaleza en O Porriño</p>
-        <a href="#registro" class="btn">Acceder al Registro de Viajeros</a>
+        <a href="https://www.booking.com/hotel/es/casa-josefas-s.es.html" target="_blank" class="btn btn-booking">Ver Disponibilidad y Reservar</a>
     </header>
 
     <div class="container">
@@ -170,11 +187,21 @@
             </div>
         </section>
 
-        <!-- Sección de Registro -->
-        <section id="registro">
-            <h2>Gestión de Estancia y Registro de Viajeros</h2>
-            <p>Si ya cuentas con tu reserva confirmada con nosotros, por favor completa el formulario obligatorio de parte de viajeros antes de tu llegada para agilizar los trámites reglamentarios.</p>
-            <a href="registro.html" class="btn">Rellenar Formulario de Registro</a>
+        <!-- Sección de Reservas y Registro (El orden lógico) -->
+        <section id="reservas">
+            <h2>¿Cómo reservar o registrar tu estancia?</h2>
+            <p>Para gestionar tu reserva con total garantía y consultar los calendarios libres en tiempo real, haz clic en nuestro canal oficial:</p>
+            <div style="text-align: center; margin: 25px 0;">
+                <a href="https://www.booking.com/hotel/es/casa-josefas-s.es.html" target="_blank" class="btn btn-booking">Reservar en Booking.com</a>
+            </div>
+
+            <div class="info-box">
+                <strong>¿Ya tienes tu reserva confirmada?</strong><br>
+                Si vas a alojarte próximamente con nosotros, recuerda rellenar el formulario obligatorio de parte de viajeros antes de tu llegada:
+                <div style="margin-top: 15px;">
+                    <a href="registro.html" class="btn">Acceder al Formulario de Registro</a>
+                </div>
+            </div>
         </section>
     </div>
 
@@ -183,5 +210,4 @@
     </footer>
 
 </body>
-</html>
 </html>
