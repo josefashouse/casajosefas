@@ -99,7 +99,7 @@
 
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
-        input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: #fff; }
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: #fff; }
 
         .summary-card {
             background: #fdfcf9;
@@ -158,6 +158,19 @@
                             <label for="emailHuesped">Correo Electrónico:</label>
                             <input type="email" id="emailHuesped" placeholder="tu@correo.com">
                         </div>
+                        <div class="form-group">
+                            <label for="numHuespedes">Número de Huéspedes (Máx. 8):</label>
+                            <select id="numHuespedes">
+                                <option value="1">1 Huésped</option>
+                                <option value="2">2 Huéspedes</option>
+                                <option value="3">3 Huéspedes</option>
+                                <option value="4">4 Huéspedes</option>
+                                <option value="5">5 Huéspedes</option>
+                                <option value="6">6 Huéspedes</option>
+                                <option value="7">7 Huéspedes</option>
+                                <option value="8">8 Huéspedes</option>
+                            </select>
+                        </div>
                         
                         <p id="detalleNoches" style="font-size: 14px; color: #666;">Haz clic en el día de llegada.</p>
                         <div class="price-tag" id="precioTotal">0 €</div>
@@ -199,7 +212,7 @@
             let eventos = [];
             diasOcupadosArray = [];
 
-            // 1. Cargar bloqueos manuales del panel admin
+            // 1. Cargar bloqueos manuales y reservas web
             let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
             bloqueosAdmin.forEach(fecha => {
                 diasOcupadosArray.push(fecha);
@@ -211,7 +224,7 @@
                 });
             });
 
-            // 2. Cargar el archivo iCal local
+            // 2. Cargar el archivo iCal local de Booking
             try {
                 const respuesta = await fetch('./booking.ics?t=' + new Date().getTime());
                 if (respuesta.ok) {
@@ -348,16 +361,15 @@
         }
 
         function validarEmail(email) {
-            // Expresión regular estándar para verificar estructura de correo válida
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return re.test(email);
         }
 
         function iniciarPagoStripe() {
             const emailInput = document.getElementById('emailHuesped').value.trim();
+            const huespedes = document.getElementById('numHuespedes').value;
             const total = document.getElementById('precioTotal').innerText;
 
-            // Validación estricta del correo antes de continuar
             if (!emailInput) {
                 alert("⚠️ Por favor, introduce tu correo electrónico.");
                 document.getElementById('emailHuesped').focus();
@@ -365,12 +377,40 @@
             }
 
             if (!validarEmail(emailInput)) {
-                alert("⚠️ El correo electrónico introducido no es válido. Comprueba que esté bien escrito (ej: tu@correo.com).");
+                alert("⚠️ El correo electrónico introducido no es válido. Comprueba que esté bien escrito.");
                 document.getElementById('emailHuesped').focus();
                 return;
             }
 
-            alert(`✅ Correo verificado (${emailInput}). Redirigiendo a Stripe para cobrar ${total}.`);
+            // SIMULACIÓN DE PAGO EXITOSO Y BLOQUEO AUTOMÁTICO
+            let start = new Date(fechaEntrada);
+            let end = new Date(fechaSalida);
+            let curr = new Date(start);
+            let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+
+            while (curr < end) {
+                let iso = curr.toISOString().split('T')[0];
+                if (!bloqueosAdmin.includes(iso)) {
+                    bloqueosAdmin.push(iso);
+                }
+                curr.setDate(curr.getDate() + 1);
+            }
+            localStorage.setItem('casaJosefasBloqueos', JSON.stringify(bloqueosAdmin));
+
+            // Guardar reserva con los huéspedes seleccionados
+            let listaReservas = JSON.parse(localStorage.getItem('casaJosefasReservasWeb') || '[]');
+            listaReservas.push({
+                email: emailInput,
+                huespedes: huespedes,
+                entrada: fechaEntrada,
+                salida: fechaSalida,
+                total: total,
+                fechaReserva: new Date().toLocaleDateString()
+            });
+            localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
+
+            alert(`✅ ¡Pago simulado con éxito! Reserva confirmada para ${emailInput} (${huespedes} huéspedes). Fechas bloqueadas.`);
+            location.reload();
         }
     </script>
 </body>
