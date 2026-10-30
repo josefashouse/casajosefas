@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casa Josefas | Alquiler Vacacional</title>
+    <style>
+        :root {
+            --primary: #2d5a27;
+            --primary-hover: #1e3c1a;
+            --accent: #d4a373;
+            --bg-color: #fcfbf9;
+            --card-bg: #ffffff;
+            --text-main: #2b2b2b;
+            --text-muted: #666666;
+            --border-color: #e3ded8;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80') no-repeat center center/cover;
+            color: white;
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        header h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+
+        section h2 {
+            color: var(--primary);
+            margin-top: 0;
+            font-size: 22px;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border-color);
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Casa Josefas</h1>
+        <p>Tu refugio de descanso y desconexión en un entorno único</p>
+        <a href="#contacto" class="btn">Consultar Disponibilidad</a>
+    </header>
+
+    <div class="container">
+        <section>
+            <h2>Bienvenidos a Casa Josefas</h2>
+            <p>Disfruta de una experiencia inolvidable en un alojamiento pensado para el confort, la tranquilidad y el contacto con lo auténtico. Ideal para familias o pequeños grupos que buscan desconectar con todas las comodidades.</p>
+        </section>
+
+        <section>
+            <h2>El Entorno y Ubicación</h2>
+            <p>Situada en un enclave privilegiado, Casa Josefas permite disfrutar de la naturaleza circundante, la gastronomía local y una excelente comunicación con los principales puntos de interés de la zona.</p>
+        </section>
+
+        <section id="contacto">
+            <h2>Gestión de Estancia y Registro</h2>
+            <p>¿Ya tienes tu reserva confirmada con nosotros? Recuerda rellenar el formulario obligatorio de parte de viajeros antes de tu llegada para agilizar el proceso.</p>
+            <!-- Aquí puedes enlazar tu formulario de GitHub Pages anterior -->
+            <a href="URL_DE_TU_FORMULARIO_EN_GITHUB" target="_blank" class="btn">Acceder al Formulario de Registro</a>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Casa Josefas. Todos los derechos reservados. | Gestión de Alquiler Vacacional</p>
+    </footer>
+
+</body>
+</html>
