@@ -2,10 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale5.0">
     <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
     <!-- FullCalendar CSS y JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <!-- Plugin nativo de FullCalendar para leer archivos .ics (iCal) sin bloqueos CORS -->
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/icalendar@6.1.8/index.global.min.js'></script>
     <style>
         :root {
             --primary: #2d5a27;
@@ -109,6 +111,12 @@
         }
         .price-tag { font-size: 26px; font-weight: bold; color: var(--primary); margin: 15px 0; }
 
+        /* Estilo para marcar los días ocupados en gris */
+        .fc-bg-event {
+            background-color: #6c757d !important;
+            opacity: 0.6 !important;
+        }
+
         footer {
             text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border-color); background: #fff;
         }
@@ -189,79 +197,55 @@
                 dateClick: function(info) {
                     manejarClickFecha(info.dateStr);
                 },
-                events: function(fetchInfo, successCallback, failureCallback) {
-                    cargarEventosCalendario(successCallback);
-                }
-            });
-            calendar.render();
-        });
+                // Usamos el plugin oficial de iCal de FullCalendar con un proxy CORS optimizado para ICS
+                events: {
+                    url: `https://api.allorigins.win/raw?url=${encodeURIComponent(icalUrl)}`,
+                    format: 'ics'
+                },
+                eventDataTransform: function(eventData) {
+                    // Forzar que los eventos de Booking se pinten como eventos de fondo en gris
+                    eventData.display = 'background';
+                    eventData.backgroundColor = '#6c757d';
+                    return eventData;
+                },
+                eventDidMount: function(info) {
+                    // Rellenar dinámicamente el array de días ocupados para bloquear clics
+                    if (info.event.start) {
+                        let curr = new Date(info.event.start);
+                        let end = info.event.end ? new Date(info.event.end) : new Date(curr);
+                        if (!info.event.end) end.setDate(end.getDate() + 1);
 
-        async function cargarEventosCalendario(successCallback) {
-            let eventos = [];
-            diasOcupadosArray = [];
-
-            // 1. Cargar bloqueos manuales del panel admin
-            let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
-            bloqueosAdmin.forEach(fecha => {
-                diasOcupadosArray.push(fecha);
-                eventos.push({
-                    start: fecha,
-                    allDay: true,
-                    display: 'background',
-                    backgroundColor: '#6c757d'
-                });
-            });
-
-            // 2. Cargar iCal de Booking mediante feed integrado
-            try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(icalUrl)}`;
-                const respuesta = await fetch(proxyUrl);
-                const data = await respuesta.json();
-                
-                if (data.contents) {
-                    const lineas = data.contents.split(/\r\n|\n|\r/);
-                    let inicioStr = "", finStr = "";
-                    for (let i = 0; i < lineas.length; i++) {
-                        if (lineas[i].startsWith("DTSTART")) inicioStr = lineas[i].split(":")[1];
-                        if (lineas[i].startsWith("DTEND")) finStr = lineas[i].split(":")[1];
-                        if (lineas[i] === "END:VEVENT" && inicioStr && finStr) {
-                            let fInicio = formatIcalDate(inicioStr);
-                            let fFin = formatIcalDate(finStr);
-                            
-                            let curr = new Date(fInicio);
-                            let endDate = new Date(fFin);
-                            while (curr < endDate) {
-                                let iso = curr.toISOString().split('T')[0];
-                                if (!diasOcupadosArray.includes(iso)) diasOcupadosArray.push(iso);
-                                curr.setDate(curr.getDate() + 1);
+                        while (curr < end) {
+                            let iso = curr.toISOString().split('T')[0];
+                            if (!diasOcupadosArray.includes(iso)) {
+                                diasOcupadosArray.push(iso);
                             }
-
-                            eventos.push({
-                                start: fInicio,
-                                end: fFin,
-                                display: 'background',
-                                backgroundColor: '#6c757d'
-                            });
-                            inicioStr = ""; finStr = "";
+                            curr.setDate(curr.getDate() + 1);
                         }
                     }
                 }
-            } catch (err) {
-                console.log("Error cargando iCal:", err);
-            }
+            });
 
-            successCallback(eventos);
-        }
+            // Añadir también los bloqueos manuales del panel admin
+            let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+            bloqueosAdmin.forEach(fecha => {
+                if (!diasOcupadosArray.includes(fecha)) {
+                    diasOcupadosArray.push(fecha);
+                    calendar.addEvent({
+                        start: fecha,
+                        allDay: true,
+                        display: 'background',
+                        backgroundColor: '#6c757d'
+                    });
+                }
+            });
 
-        function formatIcalDate(str) {
-            let year = str.substring(0, 4);
-            let month = str.substring(4, 6);
-            let day = str.substring(6, 8);
-            return `${year}-${month}-${day}`;
-        }
+            calendar.render();
+        });
 
         function manejarClickFecha(fechaStr) {
-            if (diasOcupadosArray.includes(fechaStr)) {
+            let bloqueosAdmin = JSON.parse(localStorage.getItem('casaJosefasBloqueos') || '[]');
+            if (diasOcupadosArray.includes(fechaStr) || bloqueosAdmin.includes(fechaStr)) {
                 alert("⚠️ Este día ya está reservado y no se puede seleccionar.");
                 return;
             }
@@ -289,7 +273,7 @@
 
                 while (curr < end) {
                     let iso = curr.toISOString().split('T')[0];
-                    if (diasOcupadosArray.includes(iso)) {
+                    if (diasOcupadosArray.includes(iso) || bloqueosAdmin.includes(iso)) {
                         hayBloqueoEnMedio = true;
                         break;
                     }
@@ -323,9 +307,9 @@
             for (let i = 0; i < diffDays; i++) {
                 let dayOfWeek = current.getDay();
                 if (dayOfWeek === 5 || dayOfWeek === 6) {
-                    precioTotal += 220;
+                    precioTotal += 220; // Viernes y Sábado
                 } else {
-                    precioTotal += 200;
+                    precioTotal += 200; // Domingo a Jueves
                 }
                 current.setDate(current.getDate() + 1);
             }
