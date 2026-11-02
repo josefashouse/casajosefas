@@ -99,7 +99,7 @@
 
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: #fff; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: #fff; font-family: inherit; }
 
         .summary-card {
             background: #fdfcf9;
@@ -182,6 +182,27 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- FORMULARIO DE CONTACTO / REGISTRO GENERAL -->
+        <section>
+            <h2>Contacto o Consultas</h2>
+            <p>¿Tienes alguna duda sobre la casa, disponibilidad o eventos? Escríbenos directamente y te responderemos lo antes posible.</p>
+            <form action="https://formspree.io/f/xpppozoe" method="POST" style="max-width: 600px; margin-top: 20px;">
+                <div class="form-group">
+                    <label for="nombreContacto">Nombre:</label>
+                    <input type="text" id="nombreContacto" name="nombre" required placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                    <label for="emailContacto">Correo Electrónico:</label>
+                    <input type="email" id="emailContacto" name="email" required placeholder="tu@correo.com">
+                </div>
+                <div class="form-group">
+                    <label for="mensajeContacto">Mensaje o Consulta:</label>
+                    <textarea id="mensajeContacto" name="mensaje" rows="4" required placeholder="Escribe aquí tu consulta..."></textarea>
+                </div>
+                <button type="submit" class="btn">Enviar Mensaje</button>
+            </form>
         </section>
     </div>
 
