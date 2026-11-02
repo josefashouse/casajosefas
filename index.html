@@ -107,7 +107,7 @@
 
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: #fff; font-family: inherit; }
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background: #fff; }
 
         .summary-card {
             background: #fdfcf9;
@@ -119,9 +119,7 @@
 
         .admin-access-box {
             text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px dashed var(--border-color);
+            margin-top: 10px;
         }
 
         footer {
@@ -195,34 +193,12 @@
                         <div class="price-tag" id="precioTotal">0 €</div>
                         <button id="btnPagar" class="btn" style="width: 100%; background-color: var(--primary); display: none;" onclick="procesarSolicitudReserva()">Solicitar Reserva</button>
                     </div>
-                </div>
-            </div>
-        </section>
 
-        <!-- FORMULARIO DE CONTACTO / CONSULTAS -->
-        <section>
-            <h2>Contacto o Consultas</h2>
-            <p>¿Tienes alguna duda sobre la casa, disponibilidad o eventos? Escríbenos directamente y te responderemos lo antes posible.</p>
-            <form id="formContacto" onsubmit="enviarConsulta(event)" style="max-width: 600px; margin-top: 20px;">
-                <div class="form-group">
-                    <label for="nombreContacto">Nombre:</label>
-                    <input type="text" id="nombreContacto" name="nombre" required placeholder="Tu nombre">
+                    <!-- Botón para ir al registro.html -->
+                    <div class="admin-access-box" style="margin-top: 25px;">
+                        <a href="registro.html" class="btn btn-secondary" style="width: 100%; box-sizing: border-box;">Ir al Formulario de Registro</a>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="emailContacto">Correo Electrónico:</label>
-                    <input type="email" id="emailContacto" name="email" required placeholder="tu@correo.com">
-                </div>
-                <div class="form-group">
-                    <label for="mensajeContacto">Mensaje o Consulta:</label>
-                    <textarea id="mensajeContacto" name="mensaje" rows="4" required placeholder="Escribe aquí tu consulta..."></textarea>
-                </div>
-                <button type="submit" class="btn">Enviar Mensaje</button>
-            </form>
-
-            <!-- Botón para ir al registro.html -->
-            <div class="admin-access-box">
-                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">Acceso al portal individual de registro de viajeros:</p>
-                <a href="registro.html" class="btn btn-secondary">Ir al Formulario de Registro</a>
             </div>
         </section>
     </div>
@@ -467,34 +443,8 @@
                 console.log("Aviso interno enviado o registrado localmente");
             }
 
-            // 4. Redirigir a la página de agradecimiento de reserva
+            // 4. Redirigir a la página de agradecimiento
             window.location.href = "gracias.html";
-        }
-
-        // Función para enviar la consulta de contacto mediante Formspree y redirigir
-        async function enviarConsulta(event) {
-            event.preventDefault();
-            const nombre = document.getElementById('nombreContacto').value.trim();
-            const email = document.getElementById('emailContacto').value.trim();
-            const mensaje = document.getElementById('mensajeContacto').value.trim();
-
-            const datosConsulta = new FormData();
-            datosConsulta.append("nombre", nombre);
-            datosConsulta.append("email", email);
-            datosConsulta.append("mensaje", mensaje);
-
-            try {
-                await fetch("https://formspree.io/f/xpppozoe", {
-                    method: "POST",
-                    body: datosConsulta,
-                    headers: { 'Accept': 'application/json' }
-                });
-            } catch (err) {
-                console.log("Consulta enviada");
-            }
-
-            // Redirigir a la página de éxito de contacto
-            window.location.href = "gracias-contacto.html";
         }
     </script>
 </body>
