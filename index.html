@@ -6,6 +6,8 @@
     <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
     <!-- FullCalendar CSS y JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         :root {
             --primary: #2d5a27;
@@ -186,6 +188,9 @@
     </footer>
 
     <script>
+        // Inicializamos EmailJS con tu Public Key
+        emailjs.init("NHBCi_T6QqiiVFAvL");
+
         let calendar;
         let fechaEntrada = null;
         let fechaSalida = null;
@@ -350,7 +355,7 @@
             return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         }
 
-        function procesarSolicitudReserva() {
+        async function procesarSolicitudReserva() {
             const emailInput = document.getElementById('emailHuesped').value.trim();
             const huespedes = document.getElementById('numHuespedes').value;
 
@@ -386,25 +391,30 @@
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // 3. Mostrar mensaje de éxito y abrir instrucciones automáticas por correo
-            alert(`✅ ¡Solicitud registrada con éxito!\n\nFechas: ${fechaEntrada} al ${fechaSalida}\nTotal: ${precioCalculadoTotal} €\n\nA continuación se abrirá tu aplicación de correo para enviar las instrucciones de pago al huésped.`);
+            // 3. Parámetros que se enviarán a EmailJS
+            const parametrosComunes = {
+                user_email: emailInput,
+                huespedes: huespedes,
+                entrada: fechaEntrada,
+                salida: fechaSalida,
+                noches: totalNochesCount,
+                total: precioCalculadoTotal + " €"
+            };
 
-            // Opcional: Abrir cliente de correo automáticamente con los datos listos
-            const asunto = encodeURIComponent(`Instrucciones de pago - Reserva Casa Josefas`);
-            const cuerpo = encodeURIComponent(
-                `Hola,\n\nHas solicitado una estancia en Casa Josefas:\n\n` +
-                `- Entrada: ${fechaEntrada}\n` +
-                `- Salida: ${fechaSalida}\n` +
-                `- Noches: ${totalNochesCount}\n` +
-                `- Huéspedes: ${huespedes}\n` +
-                `- Importe total: ${precioCalculadoTotal} €\n\n` +
-                `Para formalizar tu reserva, por favor realiza el pago mediante transferencia bancaria o Bizum al siguiente número / cuenta:\n` +
-                `[Inserta aquí tus datos bancarios o Bizum]\n\n` +
-                `Una vez comprobado el ingreso, te enviaremos el contrato de alquiler vacacional.\n\n` +
-                `¡Muchas gracias!`
-            );
+            try {
+                // Envío 1: Aviso para ti (template_guxsjxl)[cite: 5]
+                await emailjs.send("service_qduqhx7", "template_guxsjxl", parametrosComunes);
 
-            window.location.href = `mailto:${emailInput}?subject=${asunto}&body=${cuerpo}`;
+                // Envío 2: Instrucciones para el cliente (template_5dgfqzc)[cite: 5]
+                await emailjs.send("service_qduqhx7", "template_5dgfqzc", parametrosComunes);
+
+                alert(`✅ ¡Solicitud enviada con éxito!\n\nSe ha registrado tu estancia del ${fechaEntrada} al ${fechaSalida} (${precioCalculadoTotal} €).\n\nTe hemos enviado un correo con las instrucciones y los gerentes han recibido tu aviso.`);
+                location.reload();
+
+            } catch (error) {
+                console.error("Error al enviar correos con EmailJS:", error);
+                alert("⚠️ La reserva se guardó localmente, pero hubo un fallo al enviar los correos automáticos. Revisa la consola.");
+            }
         }
     </script>
 </body>
