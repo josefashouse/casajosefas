@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casa Josefas | Alquiler Vacacional en O Porriño</title>
+    <title>Casa Josefa's | Alquiler Vacacional en O Porriño</title>
     <!-- FullCalendar CSS y JS -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <style>
@@ -49,8 +49,16 @@
             border: none;
             cursor: pointer;
             font-size: 16px;
+            text-align: center;
         }
         .btn:hover { background-color: var(--primary-hover); }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
 
         .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
 
@@ -109,6 +117,13 @@
         }
         .price-tag { font-size: 26px; font-weight: bold; color: var(--primary); margin: 15px 0; }
 
+        .admin-access-box {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--border-color);
+        }
+
         footer {
             text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border-color); background: #fff;
         }
@@ -117,7 +132,7 @@
 <body>
 
     <header>
-        <h1>Casa Josefas</h1>
+        <h1>Casa Josefa's</h1>
         <p>Tu refugio de tranquilidad, confort y naturaleza en O Porriño</p>
         <a href="#motor-reservas" class="btn">Reservar Estancia Directa</a>
     </header>
@@ -125,8 +140,8 @@
     <div class="container">
         <!-- Presentación y Fotos -->
         <section>
-            <h2>Bienvenidos a Casa Josefas</h2>
-            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefas</strong> ofrece un alojamiento vacacional totalmente equipado.</p>
+            <h2>Bienvenidos a Casa Josefa's</h2>
+            <p>Ubicada en un entorno apacible y perfectamente comunicado, <strong>Casa Josefa's</strong> ofrece un alojamiento vacacional totalmente equipado.</p>
             <div class="grid-fotos">
                 <img src="images/pasillo.jpg" alt="Pasillo" class="foto-galeria">
                 <img src="images/sello-peregrino.jpg" alt="Detalle" class="foto-galeria">
@@ -184,11 +199,11 @@
             </div>
         </section>
 
-        <!-- FORMULARIO DE CONTACTO / REGISTRO GENERAL -->
+        <!-- FORMULARIO DE CONTACTO / CONSULTAS -->
         <section>
             <h2>Contacto o Consultas</h2>
             <p>¿Tienes alguna duda sobre la casa, disponibilidad o eventos? Escríbenos directamente y te responderemos lo antes posible.</p>
-            <form action="https://formspree.io/f/xpppozoe" method="POST" style="max-width: 600px; margin-top: 20px;">
+            <form id="formContacto" onsubmit="enviarConsulta(event)" style="max-width: 600px; margin-top: 20px;">
                 <div class="form-group">
                     <label for="nombreContacto">Nombre:</label>
                     <input type="text" id="nombreContacto" name="nombre" required placeholder="Tu nombre">
@@ -203,11 +218,17 @@
                 </div>
                 <button type="submit" class="btn">Enviar Mensaje</button>
             </form>
+
+            <!-- Botón para ir al registro.html -->
+            <div class="admin-access-box">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">Acceso al portal individual de registro de viajeros:</p>
+                <a href="registro.html" class="btn btn-secondary">Ir al Formulario de Registro</a>
+            </div>
         </section>
     </div>
 
     <footer>
-        <p>&copy; 2026 Casa Josefas. Todos los derechos reservados.</p>
+        <p>&copy; 2026 Casa Josefa's. Todos los derechos reservados.</p>
     </footer>
 
     <script>
@@ -446,8 +467,34 @@
                 console.log("Aviso interno enviado o registrado localmente");
             }
 
-            // 4. Redirigir a la página de agradecimiento
+            // 4. Redirigir a la página de agradecimiento de reserva
             window.location.href = "gracias.html";
+        }
+
+        // Función para enviar la consulta de contacto mediante Formspree y redirigir
+        async function enviarConsulta(event) {
+            event.preventDefault();
+            const nombre = document.getElementById('nombreContacto').value.trim();
+            const email = document.getElementById('emailContacto').value.trim();
+            const mensaje = document.getElementById('mensajeContacto').value.trim();
+
+            const datosConsulta = new FormData();
+            datosConsulta.append("nombre", nombre);
+            datosConsulta.append("email", email);
+            datosConsulta.append("mensaje", mensaje);
+
+            try {
+                await fetch("https://formspree.io/f/xpppozoe", {
+                    method: "POST",
+                    body: datosConsulta,
+                    headers: { 'Accept': 'application/json' }
+                });
+            } catch (err) {
+                console.log("Consulta enviada");
+            }
+
+            // Redirigir a la página de éxito de contacto
+            window.location.href = "gracias-contacto.html";
         }
     </script>
 </body>
