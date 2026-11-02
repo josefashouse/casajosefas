@@ -117,9 +117,13 @@
         }
         .price-tag { font-size: 26px; font-weight: bold; color: var(--primary); margin: 15px 0; }
 
-        .admin-access-box {
+        .admin-access-section {
             text-align: center;
-            margin-top: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 35px;
         }
 
         footer {
@@ -168,6 +172,10 @@
                             <input type="text" id="checkout" readonly placeholder="Selecciona fecha posterior">
                         </div>
                         <div class="form-group">
+                            <label for="nombreHuesped">Nombre y Apellidos:</label>
+                            <input type="text" id="nombreHuesped" placeholder="Tu nombre completo">
+                        </div>
+                        <div class="form-group">
                             <label for="emailHuesped">Correo Electrónico:</label>
                             <input type="email" id="emailHuesped" placeholder="tu@correo.com">
                         </div>
@@ -193,14 +201,16 @@
                         <div class="price-tag" id="precioTotal">0 €</div>
                         <button id="btnPagar" class="btn" style="width: 100%; background-color: var(--primary); display: none;" onclick="procesarSolicitudReserva()">Solicitar Reserva</button>
                     </div>
-
-                    <!-- Botón para ir al registro.html -->
-                    <div class="admin-access-box" style="margin-top: 25px;">
-                        <a href="registro.html" class="btn btn-secondary" style="width: 100%; box-sizing: border-box;">Ir al Formulario de Registro</a>
-                    </div>
                 </div>
             </div>
         </section>
+
+        <!-- SECCIÓN SEPARADA PARA EL ACCESO AL REGISTRO -->
+        <div class="admin-access-section">
+            <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 10px;">Portal de Registro de Viajeros</h3>
+            <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Si ya tienes tu reserva confirmada y necesitas completar los datos obligatorios de los huéspedes:</p>
+            <a href="registro.html" class="btn btn-secondary">Acceder al Formulario de Registro Individual</a>
+        </div>
     </div>
 
     <footer>
@@ -380,9 +390,16 @@
         }
 
         async function procesarSolicitudReserva() {
+            const nombreInput = document.getElementById('nombreHuesped').value.trim();
             const emailInput = document.getElementById('emailHuesped').value.trim();
             const telefonoInput = document.getElementById('telefonoHuesped').value.trim();
             const huespedes = document.getElementById('numHuespedes').value;
+
+            if (!nombreInput) {
+                alert("⚠️ Por favor, introduce tu nombre y apellidos.");
+                document.getElementById('nombreHuesped').focus();
+                return;
+            }
 
             if (!emailInput || !validarEmail(emailInput)) {
                 alert("⚠️ Por favor, introduce un correo electrónico válido.");
@@ -412,6 +429,7 @@
             // 2. Registrar la solicitud en el panel admin local
             let listaReservas = JSON.parse(localStorage.getItem('casaJosefasReservasWeb') || '[]');
             listaReservas.push({
+                nombre: nombreInput,
                 email: emailInput,
                 telefono: telefonoInput,
                 huespedes: huespedes,
@@ -423,8 +441,9 @@
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // 3. Enviar aviso interno a Formspree (con fechas bonitas y teléfono)
+            // 3. Enviar aviso interno a Formspree (con nombre, teléfono y fechas bonitas)
             const datosFormulario = new FormData();
+            datosFormulario.append("nombre", nombreInput);
             datosFormulario.append("email", emailInput);
             datosFormulario.append("telefono", telefonoInput);
             datosFormulario.append("huespedes", huespedes);
