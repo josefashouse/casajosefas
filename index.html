@@ -159,6 +159,10 @@
                             <input type="email" id="emailHuesped" placeholder="tu@correo.com">
                         </div>
                         <div class="form-group">
+                            <label for="telefonoHuesped">Teléfono de Contacto:</label>
+                            <input type="tel" id="telefonoHuesped" placeholder="+34 600 000 000">
+                        </div>
+                        <div class="form-group">
                             <label for="numHuespedes">Número de Huéspedes (Máx. 8):</label>
                             <select id="numHuespedes">
                                 <option value="1">1 Huésped</option>
@@ -273,6 +277,13 @@
             return d.toISOString().split('T')[0];
         }
 
+        function formatearFechaBonita(fechaStr) {
+            if (!fechaStr) return "";
+            let [anio, mes, dia] = fechaStr.split('-');
+            let fechaObj = new Date(anio, mes - 1, dia);
+            return fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
         function manejarClickFecha(fechaStr) {
             if (!fechaEntrada || (fechaEntrada && fechaSalida)) {
                 if (nochesOcupadasSet.has(fechaStr)) {
@@ -281,7 +292,7 @@
                 }
                 fechaEntrada = fechaStr;
                 fechaSalida = null;
-                document.getElementById('checkin').value = fechaEntrada;
+                document.getElementById('checkin').value = formatearFechaBonita(fechaEntrada);
                 document.getElementById('checkout').value = "";
                 document.getElementById('detalleNoches').innerText = "Ahora haz clic en la fecha de salida.";
                 document.getElementById('precioTotal').innerText = "0 €";
@@ -290,7 +301,7 @@
                 if (fechaStr <= fechaEntrada) {
                     alert("La fecha de salida debe ser posterior a la de entrada.");
                     fechaEntrada = fechaStr;
-                    document.getElementById('checkin').value = fechaEntrada;
+                    document.getElementById('checkin').value = formatearFechaBonita(fechaEntrada);
                     return;
                 }
 
@@ -311,14 +322,14 @@
                     alert("⚠️ Hay días reservados en medio de las fechas seleccionadas.");
                     fechaEntrada = fechaStr;
                     fechaSalida = null;
-                    document.getElementById('checkin').value = fechaEntrada;
+                    document.getElementById('checkin').value = formatearFechaBonita(fechaEntrada);
                     document.getElementById('checkout').value = "";
                     document.getElementById('detalleNoches').innerText = "Selecciona de nuevo la fecha de salida.";
                     return;
                 }
 
                 fechaSalida = fechaStr;
-                document.getElementById('checkout').value = fechaSalida;
+                document.getElementById('checkout').value = formatearFechaBonita(fechaSalida);
                 calcularPrecio(fechaEntrada, fechaSalida);
             }
         }
@@ -352,11 +363,18 @@
 
         async function procesarSolicitudReserva() {
             const emailInput = document.getElementById('emailHuesped').value.trim();
+            const telefonoInput = document.getElementById('telefonoHuesped').value.trim();
             const huespedes = document.getElementById('numHuespedes').value;
 
             if (!emailInput || !validarEmail(emailInput)) {
                 alert("⚠️ Por favor, introduce un correo electrónico válido.");
                 document.getElementById('emailHuesped').focus();
+                return;
+            }
+
+            if (!telefonoInput) {
+                alert("⚠️ Por favor, introduce un número de teléfono de contacto.");
+                document.getElementById('telefonoHuesped').focus();
                 return;
             }
 
@@ -377,21 +395,23 @@
             let listaReservas = JSON.parse(localStorage.getItem('casaJosefasReservasWeb') || '[]');
             listaReservas.push({
                 email: emailInput,
+                telefono: telefonoInput,
                 huespedes: huespedes,
-                entrada: fechaEntrada,
-                salida: fechaSalida,
+                entrada: formatearFechaBonita(fechaEntrada),
+                salida: formatearFechaBonita(fechaSalida),
                 total: precioCalculadoTotal + " €",
                 estado: "Pendiente de pago",
                 fechaReserva: new Date().toLocaleDateString()
             });
             localStorage.setItem('casaJosefasReservasWeb', JSON.stringify(listaReservas));
 
-            // 3. Enviar aviso interno a Formspree para que te llegue el correo a ti
+            // 3. Enviar aviso interno a Formspree (con fechas bonitas y teléfono)
             const datosFormulario = new FormData();
             datosFormulario.append("email", emailInput);
+            datosFormulario.append("telefono", telefonoInput);
             datosFormulario.append("huespedes", huespedes);
-            datosFormulario.append("entrada", fechaEntrada);
-            datosFormulario.append("salida", fechaSalida);
+            datosFormulario.append("entrada", formatearFechaBonita(fechaEntrada));
+            datosFormulario.append("salida", formatearFechaBonita(fechaSalida));
             datosFormulario.append("noches", totalNochesCount);
             datosFormulario.append("total", precioCalculadoTotal + " €");
 
@@ -405,9 +425,8 @@
                 console.log("Aviso interno enviado o registrado localmente");
             }
 
-            // 4. Mensaje claro de éxito para el cliente
-            alert(`🎉 ¡Reserva realizada con éxito!\n\nEstancia del ${fechaEntrada} al ${fechaSalida} (${precioCalculadoTotal} €).\n\nEn las próximas 48 horas te llegará un correo electrónico con las instrucciones necesarias para acabar de formalizar tu reserva.`);
-            location.reload();
+            // 4. Redirigir a la página de agradecimiento
+            window.location.href = "gracias.html";
         }
     </script>
 </body>
